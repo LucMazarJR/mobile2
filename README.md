@@ -1,56 +1,111 @@
-# Welcome to your Expo app 👋
+# Controle de Manutenção de Equipamentos
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo mobile (React Native + Expo) para registrar e acompanhar a manutenção
+de equipamentos — extintores, ar-condicionados, geradores, máquinas de laboratório
+e afins.
 
-## Get started
+## O problema
 
-1. Install dependencies
+Escolas, condomínios e pequenas empresas controlam manutenção em planilha ou papel.
+O resultado é que ninguém sabe com segurança quando cada equipamento foi revisado
+pela última vez, o que foi feito e por quem. Pior: o técnico costuma estar
+justamente onde não há sinal de internet — casa de máquinas, subsolo, depósito.
 
-   ```bash
-   npm install
-   ```
+Por isso o app é **offline-first**: tudo é gravado na hora no banco local do
+aparelho (SQLite) e enviado ao banco online (Supabase/PostgreSQL) assim que a
+conexão volta.
 
-2. Start the app
+## Tecnologias
 
-   ```bash
-   npx expo start
-   ```
+| Camada | Tecnologia |
+| --- | --- |
+| App | React Native + Expo (Expo Router) |
+| Banco local | Expo SQLite |
+| Banco online | Supabase (PostgreSQL) |
+| Linguagem | TypeScript |
 
-In the output, you'll find options to open the app in a
+## Como rodar
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Instalar as dependências
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Criar o projeto no Supabase
 
-### Other setup steps
+1. Acesse [supabase.com](https://supabase.com) e crie uma conta (o plano gratuito basta).
+2. Clique em **New project**, escolha um nome e defina a senha do banco.
+3. Aguarde alguns minutos até o projeto terminar de subir.
+4. Vá em **SQL Editor > New query**, cole o conteúdo de [`supabase/schema.sql`](supabase/schema.sql)
+   e clique em **Run**. Isso cria as tabelas e libera o acesso do app.
+5. Vá em **Project Settings > Data API** e copie a **Project URL** e a chave
+   **anon public**.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+### 3. Configurar as credenciais
 
-## Learn more
+```bash
+cp .env.example .env
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Preencha o `.env` com os dados copiados no passo anterior:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```
+EXPO_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+```
 
-## Join the community
+O `.env` não vai para o Git. Cada integrante do grupo cria o seu.
 
-Join our community of developers creating universal apps.
+> Sem essas credenciais o app continua funcionando normalmente offline — apenas
+> a sincronização fica desativada, com um aviso na tela inicial.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 4. Iniciar o app
+
+```bash
+npx expo start
+```
+
+Leia o QR Code com o app **Expo Go** no celular, ou pressione `a` para abrir num
+emulador Android.
+
+## Como a sincronização funciona
+
+Toda gravação acontece primeiro no SQLite, com a coluna `synced = 0`. Um serviço
+de sincronização envia as linhas pendentes ao Supabase e marca `synced = 1`.
+
+A sincronização é disparada quando:
+
+- a conexão de rede volta;
+- o app retorna ao primeiro plano;
+- o usuário puxa a lista para baixo;
+- um novo registro é criado (tentativa imediata).
+
+Se o envio falhar, as linhas continuam pendentes e a próxima tentativa reenvia.
+A faixa no topo da tela inicial mostra quantos registros ainda faltam enviar.
+
+## Estrutura do projeto
+
+```
+src/
+  app/                    telas (rotas do Expo Router)
+    index.tsx             lista de equipamentos
+    equipamento/
+      novo.tsx            cadastro de equipamento
+      [id]/
+        index.tsx         ficha + histórico de manutenções
+        nova-manutencao.tsx
+  components/             componentes de interface reutilizáveis
+  db/                     schema do SQLite e funções de acesso aos dados
+  services/               cliente Supabase, sincronização e geração de ids
+  utils/                  cálculo de status e formatação de datas
+supabase/
+  schema.sql              estrutura equivalente no PostgreSQL
+```
+
+## Próxima etapa (2º bimestre)
+
+Leitura de **QR Code** com a câmera: cada equipamento recebe uma etiqueta impressa
+com seu identificador. O técnico escaneia a etiqueta, o app abre a ficha do
+equipamento direto e registra a leitura numa tabela `escaneamentos`, que também é
+sincronizada com o Supabase.
