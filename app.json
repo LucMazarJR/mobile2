@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.controlemanutencao.app",
       "adaptiveIcon": {
         "backgroundColor": "#E2F1F2",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

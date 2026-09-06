@@ -80,6 +80,36 @@ Leia o QR Code com o app **Expo Go** no celular, ou pressione `a` para abrir num
 emulador Android. Depois de mexer no `.env`, reinicie com `npx expo start -c`:
 variáveis de ambiente só entram no bundle quando o Metro sobe.
 
+## Gerar um APK para instalar no celular
+
+Para alguém testar o app sem precisar do Expo Go e sem o servidor rodando, o
+caminho é o build na nuvem do Expo (EAS). O plano gratuito atende, e ele resolve
+a assinatura do APK sozinho.
+
+```bash
+npx eas login          # conta gratuita em expo.dev
+npx eas build -p android --profile preview
+```
+
+O perfil `preview` do [`eas.json`](eas.json) já está configurado para gerar
+**APK** (e não AAB), que é o formato que instala direto no aparelho. Ao final o
+comando devolve um link de download que pode ser enviado para qualquer pessoa.
+Quem receber precisa autorizar "instalar de fontes desconhecidas".
+
+### Atenção com as credenciais
+
+O build acontece na nuvem e o `.env` não sobe junto, porque está no
+`.gitignore`. Sem passar as variáveis, o APK sai funcionando normalmente
+offline, mas com a cópia na nuvem desligada. Para levá-las junto:
+
+```bash
+npx eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://seuprojeto.supabase.co
+npx eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value eyJhbGciOi...
+```
+
+A chave `anon` é pública por natureza, ela já fica embutida em qualquer build do
+app. Quem não deve sair daqui de jeito nenhum é a `service_role`.
+
 ## Como a cópia na nuvem funciona
 
 Toda gravação acontece primeiro no SQLite, com a coluna `synced = 0`. Um serviço
