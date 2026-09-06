@@ -1,58 +1,88 @@
+import {
+  Inter_400Regular,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
+} from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { Suspense } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, useColorScheme } from 'react-native';
 
-import { migrarBanco } from '@/db/schema';
-import { SyncProvider } from '@/services/SyncContext';
-import { cores } from '@/theme';
+import { migrateDatabase } from '@/db/schema';
+import { I18nProvider, useI18n } from '@/i18n';
+import { BackupProvider } from '@/services/BackupContext';
+import { usePalette } from '@/theme';
 
-function Carregando() {
+function Loading() {
+  const palette = usePalette();
   return (
-    <View style={estilos.carregando}>
-      <ActivityIndicator color={cores.primaria} />
+    <View style={[styles.loading, { backgroundColor: palette.surfaceSunken }]}>
+      <ActivityIndicator color={palette.brand} />
     </View>
   );
 }
 
-export default function RootLayout() {
+function Navigator() {
+  const palette = usePalette();
+  const { t } = useI18n();
+
   return (
-    // O banco é aberto e migrado antes de qualquer tela aparecer; enquanto isso
-    // o Suspense mostra o indicador de carregamento.
-    <Suspense fallback={<Carregando />}>
-      <SQLiteProvider databaseName="manutencao.db" onInit={migrarBanco} useSuspense>
-        <SyncProvider>
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerStyle: { backgroundColor: cores.cartao },
-              headerTitleStyle: { color: cores.texto, fontSize: 17, fontWeight: '700' },
-              headerTintColor: cores.primaria,
-              contentStyle: { backgroundColor: cores.fundo },
-            }}>
-            <Stack.Screen name="index" options={{ title: 'Equipamentos' }} />
-            <Stack.Screen
-              name="equipamento/novo"
-              options={{ title: 'Novo equipamento', presentation: 'modal' }}
-            />
-            <Stack.Screen name="equipamento/[id]/index" options={{ title: 'Equipamento' }} />
-            <Stack.Screen
-              name="equipamento/[id]/nova-manutencao"
-              options={{ title: 'Nova manutenção', presentation: 'modal' }}
-            />
-          </Stack>
-        </SyncProvider>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: palette.surface },
+        headerTitleStyle: { color: palette.ink, fontFamily: 'Inter_600SemiBold', fontSize: 17 },
+        headerTintColor: palette.brand,
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: palette.surfaceSunken },
+      }}>
+      <Stack.Screen name="index" options={{ title: t.nav.home }} />
+      <Stack.Screen name="about" options={{ title: t.nav.about, presentation: 'modal' }} />
+      <Stack.Screen
+        name="equipment/new"
+        options={{ title: t.nav.newEquipment, presentation: 'modal' }}
+      />
+      <Stack.Screen name="equipment/[id]/index" options={{ title: t.nav.equipment }} />
+      <Stack.Screen
+        name="equipment/[id]/edit"
+        options={{ title: t.nav.editEquipment, presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="equipment/[id]/maintenance"
+        options={{ title: t.nav.newMaintenance, presentation: 'modal' }}
+      />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  const scheme = useColorScheme();
+
+  // A font must never be able to hang the app: if it fails to load, the screens
+  // render on the system font instead.
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
+
+  if (!fontsLoaded && !fontError) return <Loading />;
+
+  return (
+    <Suspense fallback={<Loading />}>
+      <SQLiteProvider databaseName="manutencao.db" onInit={migrateDatabase} useSuspense>
+        <I18nProvider>
+          <BackupProvider>
+            <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+            <Navigator />
+          </BackupProvider>
+        </I18nProvider>
       </SQLiteProvider>
     </Suspense>
   );
 }
 
-const estilos = StyleSheet.create({
-  carregando: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: cores.fundo,
-  },
+const styles = StyleSheet.create({
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

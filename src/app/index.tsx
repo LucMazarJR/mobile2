@@ -1,109 +1,255 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import BarraSync from '@/components/BarraSync';
-import EquipamentoCard from '@/components/EquipamentoCard';
-import EstadoVazio from '@/components/EstadoVazio';
-import { listarEquipamentos } from '@/db/equipamentos';
-import type { EquipamentoComResumo } from '@/db/tipos';
-import { useSync } from '@/services/SyncContext';
-import { cores, espaco, raio } from '@/theme';
 
-export default function ListaEquipamentos() {
+import BackupBar from '@/components/BackupBar';
+import EmptyState from '@/components/EmptyState';
+import EquipmentCard from '@/components/EquipmentCard';
+import FilterChips, { type FilterKey } from '@/components/FilterChips';
+import { listEquipment } from '@/db/equipment';
+import type { EquipmentWithSummary } from '@/db/types';
+import { useI18n } from '@/i18n';
+import { useBackup } from '@/services/BackupContext';
+import { radius, spacing, type, usePalette } from '@/theme';
+import { computeStatus } from '@/utils/status';
+
+export default function EquipmentList() {
   const db = useSQLiteContext();
   const router = useRouter();
+  const palette = usePalette();
   const insets = useSafeAreaInsets();
-  const { sincronizarAgora, atualizarPendentes, revisao } = useSync();
+  const { t } = useI18n();
+  const { uploadNow, fetchFromCloud, refreshPending, revision } = useBackup();
 
-  const [equipamentos, setEquipamentos] = useState<EquipamentoComResumo[]>([]);
-  const [atualizando, setAtualizando] = useState(false);
+  const [equipment, setEquipment] = useState<EquipmentWithSummary[]>([]);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<FilterKey>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
-  const carregar = useCallback(async () => {
-    setEquipamentos(await listarEquipamentos(db));
-    await atualizarPendentes();
-  }, [db, atualizarPendentes]);
+  const load = useCallback(async () => {
+    setEquipment(await listEquipment(db));
+    await refreshPending();
+  }, [db, refreshPending]);
 
-  // Recarrega toda vez que a tela volta ao foco (ex.: depois de cadastrar
-  // um equipamento ou registrar uma manutenção).
   useFocusEffect(
     useCallback(() => {
-      carregar();
-    }, [carregar])
+      load();
+    }, [load])
   );
 
-  // Depois de um envio, as linhas passam a ter synced = 1 no banco. Sem reler,
-  // os cartões continuariam mostrando o aviso de "não sincronizado".
+  // After an upload the rows change to synced = 1; without re-reading them the
+  // cards would keep showing the "saved here only" mark.
   useEffect(() => {
-    if (revisao === 0) return;
-    carregar();
-  }, [revisao, carregar]);
+    if (revision === 0) return;
+    load();
+  }, [revision, load]);
 
-  const aoPuxar = useCallback(async () => {
-    setAtualizando(true);
-    await sincronizarAgora();
-    await carregar();
-    setAtualizando(false);
-  }, [sincronizarAgora, carregar]);
+  const onPullToRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await uploadNow();
+    await fetchFromCloud();
+    await load();
+    setRefreshing(false);
+  }, [uploadNow, fetchFromCloud, load]);
+
+  // The product exists to answer "what needs attention now", so the list leads
+  // with the most overdue rather than with whatever starts with A.
+  const sorted = useMemo(() => {
+    return [...equipment].sort((a, b) => {
+      const left = computeStatus(a);
+      const right = computeStatus(b);
+      if (left.daysLeft !== right.daysLeft) return left.daysLeft - right.daysLeft;
+      return a.name.localeCompare(b.name);
+    });
+  }, [equipment]);
+
+  const counts = useMemo(() => {
+    const result: Record<FilterKey, number> = {
+      all: sorted.length,
+      overdue: 0,
+      'due-soon': 0,
+      'on-track': 0,
+    };
+    for (const item of sorted) result[computeStatus(item).key] += 1;
+    return result;
+  }, [sorted]);
+
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return sorted.filter((item) => {
+      if (filter !== 'all' && computeStatus(item).key !== filter) return false;
+      if (!term) return true;
+      return [item.name, item.category, item.location]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(term));
+    });
+  }, [sorted, filter, search]);
+
+  const nothingAtAll = equipment.length === 0;
 
   return (
-    <View style={estilos.tela}>
-      <FlatList
-        data={equipamentos}
-        keyExtractor={(item) => item.id}
+    <View style={[styles.screen, { backgroundColor: palette.surfaceSunken }]}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push('/about')}
+              accessibilityRole="button"
+              accessibilityLabel={t.nav.about}
+              hitSlop={12}>
+              <MaterialCommunityIcons
+                name="information-outline"
+                size={22}
+                color={palette.inkMuted}
+              />
+            </Pressable>
+          ),
+        }}
+      />
+
+      {/* Reanimated's FlatList is what enables itemLayoutAnimation, so
+          filtering slides the rows instead of teleporting them. */}
+      <Animated.FlatList
+        data={visible}
+        keyExtractor={(item) => (item as EquipmentWithSummary).id}
+        itemLayoutAnimation={LinearTransition.duration(200)}
         contentContainerStyle={[
-          estilos.conteudo,
-          { paddingBottom: insets.bottom + 96 },
-          equipamentos.length === 0 && estilos.conteudoVazio,
+          styles.content,
+          { paddingBottom: insets.bottom + 100 },
+          visible.length === 0 && styles.contentEmpty,
         ]}
-        ListHeaderComponent={BarraSync}
-        refreshControl={<RefreshControl refreshing={atualizando} onRefresh={aoPuxar} />}
-        ListEmptyComponent={
-          <EstadoVazio
-            titulo="Nenhum equipamento cadastrado"
-            descricao="Cadastre o primeiro equipamento para começar a registrar o histórico de manutenções."
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onPullToRefresh}
+            tintColor={palette.brand}
           />
         }
+        ListHeaderComponent={
+          <View>
+            <BackupBar />
+            {!nothingAtAll ? (
+              <>
+                <View
+                  style={[
+                    styles.searchBox,
+                    { backgroundColor: palette.surface, borderColor: palette.line },
+                  ]}>
+                  <MaterialCommunityIcons name="magnify" size={20} color={palette.inkFaint} />
+                  <TextInput
+                    value={search}
+                    onChangeText={setSearch}
+                    placeholder={t.home.searchPlaceholder}
+                    placeholderTextColor={palette.inkFaint}
+                    accessibilityLabel={t.home.searchPlaceholder}
+                    style={[type.body, styles.searchInput, { color: palette.ink }]}
+                  />
+                  {search.length > 0 ? (
+                    <Pressable onPress={() => setSearch('')} hitSlop={10}>
+                      <MaterialCommunityIcons
+                        name="close-circle"
+                        size={18}
+                        color={palette.inkFaint}
+                      />
+                    </Pressable>
+                  ) : null}
+                </View>
+
+                <FilterChips
+                  value={filter}
+                  onChange={setFilter}
+                  counts={counts}
+                  labels={{
+                    all: t.home.filterAll,
+                    overdue: t.home.filterOverdue,
+                    'due-soon': t.home.filterDueSoon,
+                    'on-track': t.home.filterOnTrack,
+                  }}
+                />
+              </>
+            ) : null}
+          </View>
+        }
+        ListEmptyComponent={
+          nothingAtAll ? (
+            <EmptyState
+              icon="clipboard-text-outline"
+              title={t.home.emptyTitle}
+              body={t.home.emptyBody}
+              actionLabel={t.home.emptyAction}
+              onAction={() => router.push('/equipment/new')}
+            />
+          ) : (
+            <EmptyState
+              icon="magnify-close"
+              title={t.home.noResultsTitle}
+              body={t.home.noResultsBody}
+            />
+          )
+        }
         renderItem={({ item }) => (
-          <EquipamentoCard
-            equipamento={item}
-            onPress={() => router.push(`/equipamento/${item.id}`)}
+          <EquipmentCard
+            equipment={item as EquipmentWithSummary}
+            onPress={() => router.push({
+              pathname: '/equipment/[id]',
+              params: { id: (item as EquipmentWithSummary).id },
+            })}
           />
         )}
       />
 
       <Pressable
-        onPress={() => router.push('/equipamento/novo')}
+        onPress={() => router.push('/equipment/new')}
+        accessibilityRole="button"
+        accessibilityLabel={t.home.newEquipment}
         style={({ pressed }) => [
-          estilos.botaoFlutuante,
-          { bottom: insets.bottom + espaco.lg },
-          pressed && estilos.pressionado,
+          styles.fab,
+          { backgroundColor: palette.brand, bottom: insets.bottom + spacing.lg },
+          pressed && styles.fabPressed,
         ]}>
-        <Text style={estilos.botaoFlutuanteTexto}>+ Novo equipamento</Text>
+        <MaterialCommunityIcons name="plus" size={20} color={palette.onBrand} />
+        <Animated.Text style={[type.bodyStrong, { color: palette.onBrand }]}>
+          {t.home.newEquipment}
+        </Animated.Text>
       </Pressable>
     </View>
   );
 }
 
-const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: cores.fundo },
-  conteudo: { padding: espaco.lg },
-  conteudoVazio: { flexGrow: 1 },
-  botaoFlutuante: {
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  content: { padding: spacing.lg },
+  contentEmpty: { flexGrow: 1 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    minHeight: 46,
+    marginBottom: spacing.md,
+  },
+  searchInput: { flex: 1, paddingVertical: spacing.sm },
+  fab: {
     position: 'absolute',
     alignSelf: 'center',
-    backgroundColor: cores.primaria,
-    paddingHorizontal: espaco.xl,
-    paddingVertical: espaco.md,
-    borderRadius: raio.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.pill,
     shadowColor: '#000',
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 5,
   },
-  botaoFlutuanteTexto: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  pressionado: { opacity: 0.9 },
+  fabPressed: { opacity: 0.9 },
 });
