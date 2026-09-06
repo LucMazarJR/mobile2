@@ -20,6 +20,12 @@ type ValorSync = {
   ultimoErro: string | null;
   ultimoEnvio: Date | null;
   configurado: boolean;
+  /**
+   * Muda a cada envio bem-sucedido. As telas observam esse número para
+   * recarregar os dados: depois do envio a coluna synced muda no banco, e sem
+   * reler as linhas os cartões continuariam exibindo "não sincronizado".
+   */
+  revisao: number;
   sincronizarAgora: () => Promise<ResultadoSync | null>;
   atualizarPendentes: () => Promise<void>;
 };
@@ -32,6 +38,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [sincronizando, setSincronizando] = useState(false);
   const [ultimoErro, setUltimoErro] = useState<string | null>(null);
   const [ultimoEnvio, setUltimoEnvio] = useState<Date | null>(null);
+  const [revisao, setRevisao] = useState(0);
 
   // Evita que dois gatilhos (ex.: rede voltou + app abriu) disparem
   // sincronizações simultâneas e enviem a mesma linha duas vezes.
@@ -55,7 +62,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     if (resultado.ok) {
       setUltimoErro(null);
-      if (resultado.enviadas > 0) setUltimoEnvio(new Date());
+      if (resultado.enviadas > 0) {
+        setUltimoEnvio(new Date());
+        setRevisao((atual) => atual + 1);
+      }
     } else if (resultado.motivo === 'falha') {
       setUltimoErro(resultado.erro);
     }
@@ -94,6 +104,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         ultimoErro,
         ultimoEnvio,
         configurado: supabaseConfigurado,
+        revisao,
         sincronizarAgora,
         atualizarPendentes,
       }}>

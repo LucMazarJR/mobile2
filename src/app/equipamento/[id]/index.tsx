@@ -1,6 +1,6 @@
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,7 +19,7 @@ export default function DetalheEquipamento() {
   const db = useSQLiteContext();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { atualizarPendentes } = useSync();
+  const { atualizarPendentes, revisao } = useSync();
 
   const [equipamento, setEquipamento] = useState<EquipamentoComResumo | null>(null);
   const [manutencoes, setManutencoes] = useState<Manutencao[]>([]);
@@ -38,6 +38,13 @@ export default function DetalheEquipamento() {
       carregar();
     }, [carregar])
   );
+
+  // Mesmo motivo da lista: depois do envio o histórico precisa ser relido para
+  // as manutenções deixarem de aparecer como "pendente".
+  useEffect(() => {
+    if (revisao === 0) return;
+    carregar();
+  }, [revisao, carregar]);
 
   function confirmarExclusao() {
     Alert.alert(

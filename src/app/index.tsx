@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,7 +16,7 @@ export default function ListaEquipamentos() {
   const db = useSQLiteContext();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { sincronizarAgora, atualizarPendentes } = useSync();
+  const { sincronizarAgora, atualizarPendentes, revisao } = useSync();
 
   const [equipamentos, setEquipamentos] = useState<EquipamentoComResumo[]>([]);
   const [atualizando, setAtualizando] = useState(false);
@@ -33,6 +33,13 @@ export default function ListaEquipamentos() {
       carregar();
     }, [carregar])
   );
+
+  // Depois de um envio, as linhas passam a ter synced = 1 no banco. Sem reler,
+  // os cartões continuariam mostrando o aviso de "não sincronizado".
+  useEffect(() => {
+    if (revisao === 0) return;
+    carregar();
+  }, [revisao, carregar]);
 
   const aoPuxar = useCallback(async () => {
     setAtualizando(true);
