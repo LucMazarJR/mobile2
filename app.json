@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "mobile2",
-    "slug": "mobile2",
+    "name": "Controle de Manutenção",
+    "slug": "controle-manutencao",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile2",
-    "userInterfaceStyle": "automatic",
+    "scheme": "controlemanutencao",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },
