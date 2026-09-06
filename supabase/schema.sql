@@ -42,18 +42,25 @@ create index if not exists idx_maintenance_equipment
 do $$
 begin
   if to_regclass('public.equipamentos') is not null then
+    -- The very first version had no soft deletion, so the column may be
+    -- missing. Adding it first keeps the copy below valid either way.
+    execute 'alter table equipamentos add column if not exists deleted_at timestamptz';
+
     insert into equipment (id, name, category, location, interval_days, created_at, updated_at, deleted_at)
-      select id, nome, categoria, localizacao, intervalo_dias, criado_em, atualizado_em, deleted_at
-        from equipamentos
+      select e.id, e.nome, e.categoria, e.localizacao, e.intervalo_dias,
+             e.criado_em, e.atualizado_em, e.deleted_at
+        from equipamentos e
       on conflict (id) do nothing;
   end if;
 
   if to_regclass('public.manutencoes') is not null then
+    execute 'alter table manutencoes add column if not exists deleted_at timestamptz';
+
     insert into maintenance (id, equipment_id, type, description, technician, performed_at, created_at, deleted_at)
-      select id, equipamento_id,
-             case tipo when 'preventiva' then 'preventive' else 'corrective' end,
-             descricao, responsavel, data, criado_em, deleted_at
-        from manutencoes
+      select m.id, m.equipamento_id,
+             case m.tipo when 'preventiva' then 'preventive' else 'corrective' end,
+             m.descricao, m.responsavel, m.data, m.criado_em, m.deleted_at
+        from manutencoes m
       on conflict (id) do nothing;
   end if;
 end $$;
