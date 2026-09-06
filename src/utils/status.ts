@@ -19,8 +19,8 @@ type StatusSource = Pick<
   'last_maintenance' | 'created_at' | 'interval_days'
 >;
 
-// Status is derived, never stored: days counted from the last service — or from
-// the day the equipment was added, when it has never been serviced — compared
+// Status is derived, never stored: days counted from the last service, or from
+// the day the equipment was added when it has never been serviced, compared
 // against its own interval.
 export function computeStatus(equipment: StatusSource): Status {
   const base = equipment.last_maintenance || equipment.created_at;
@@ -78,14 +78,14 @@ export function statusFullLabel(status: Status, t: Dictionary): string {
 }
 
 export function formatDate(value: Date | string | null | undefined, locale: string): string {
-  if (!value) return '—';
+  if (!value) return '-';
   const date = typeof value === 'string' ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return '-';
   return date.toLocaleDateString(locale);
 }
 
 export function formatTime(value: Date | null, locale: string): string {
-  if (!value || Number.isNaN(value.getTime())) return '—';
+  if (!value || Number.isNaN(value.getTime())) return '-';
   return value.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 }
 
@@ -125,7 +125,7 @@ export function foldForSearch(value: string): string {
     .normalize('NFD')
     // After NFD an accent is a separate mark, so dropping everything that is
     // not a plain letter, digit or space removes accents and punctuation in one
-    // pass — and keeps the pattern free of non-ASCII characters.
+    // pass, and keeps the pattern free of non-ASCII characters.
     .replace(/[^a-z0-9\s]/g, '');
 }
 

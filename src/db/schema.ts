@@ -4,8 +4,8 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 // onInit hook of <SQLiteProvider>.
 //
 // Two columns exist only on the device and not in Postgres:
-//   synced      — marks rows that have not reached the cloud yet.
-//   deleted_at  — deletion is logical, never physical. Without it a deleted
+//   synced:     marks rows that have not reached the cloud yet.
+//   deleted_at: deletion is logical, never physical. Without it a deleted
 //                 row would just vanish from here and live forever in the
 //                 cloud, because the upload only knows how to send rows that
 //                 still exist.
@@ -127,7 +127,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
 
 // SQLite has no ALTER TABLE ADD COLUMN IF NOT EXISTS: running it twice throws
 // "duplicate column name". Since the provider uses Suspense, a throw here would
-// leave the app on a blank screen — hence the check.
+// leave the app on a blank screen, hence the check.
 async function addColumnIfMissing(
   db: SQLiteDatabase,
   table: string,

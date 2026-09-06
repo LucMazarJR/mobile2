@@ -132,7 +132,7 @@ export default function About() {
           style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.line }]}>
           <Row label={t.about.techCloud} value={cloudHost ?? t.about.techCloudOff} mono />
           <Row label={t.about.techLocalDb} value="manutencao.db" mono />
-          <Row label={t.about.techVersion} value={version === null ? '—' : `v${version}`} mono />
+          <Row label={t.about.techVersion} value={version === null ? '-' : `v${version}`} mono />
           <Row label="equipment" value={String(pending.equipment)} mono />
           <Row label="maintenance" value={String(pending.maintenance)} mono />
           <Row

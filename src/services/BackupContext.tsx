@@ -112,8 +112,8 @@ export function BackupProvider({ children }: { children: ReactNode }) {
       await refreshPending();
       if (cancelled) return;
 
-      // A phone that has never held data pulls the cloud copy on first open —
-      // this is what makes "I changed phones" work. It runs after the upload
+      // A phone that has never held data pulls the cloud copy on first open.
+      // This is what makes "I changed phones" work. It runs after the upload
       // path and can never affect it.
       try {
         const row = await db.getFirstAsync<{ total: number }>(

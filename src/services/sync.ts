@@ -13,7 +13,7 @@ export type PendingCounts = Record<SyncedTable, number>;
 
 // Being offline is this app's normal state, not an error: the technician is
 // usually in a plant room or a basement. So a network failure is kept separate
-// from a real one — only the second deserves an alarm on screen.
+// from a real one, because only the second deserves an alarm on screen.
 function isNetworkFailure(error: unknown): boolean {
   const text = error instanceof Error ? error.message : String(error);
   return /network request failed|failed to fetch|aborterror|timeout|networkerror/i.test(text);
@@ -43,7 +43,7 @@ async function uploadTable(db: SQLiteDatabase, table: SyncedTable): Promise<numb
   if (rows.length === 0) return 0;
 
   // "synced" is local bookkeeping and does not exist in Postgres. "deleted_at"
-  // exists on both sides and rides along — that is how a deletion reaches the
+  // exists on both sides and rides along, and that is how a deletion reaches the
   // cloud instead of the row simply vanishing from this phone.
   const payload = rows.map(({ synced, ...rest }) => rest);
 
@@ -92,7 +92,7 @@ function normalizeDate(value: unknown): string | null {
 const DATE_COLUMNS = ['created_at', 'updated_at', 'performed_at', 'deleted_at'];
 
 // Brings down what this phone has never seen. One rule makes it safe: INSERT OR
-// IGNORE, local always wins. That kills every conflict class at once — a row
+// IGNORE, local always wins. That kills every conflict class at once: a row
 // edited here survives, a row deleted here cannot come back, and a row deleted
 // on another phone arrives with deleted_at already set, so it stays hidden.
 export async function downloadFromCloud(db: SQLiteDatabase): Promise<number> {

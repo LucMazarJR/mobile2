@@ -72,7 +72,7 @@ drop table if exists equipamentos;
 -- Access
 -- ---------------------------------------------------------------------------
 -- Supabase turns Row Level Security on by default and, with no policy at all,
--- blocks everything coming from the anon key — including this app's writes.
+-- blocks everything coming from the anon key, including this app's writes.
 -- Since the project has no login, both tables are opened up.
 -- (A deliberate academic scope decision: a real app would restrict this to the
 -- signed-in user.)

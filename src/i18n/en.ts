@@ -10,7 +10,7 @@ export const en: Dictionary = {
     edit: 'Edit',
     retry: 'Try again',
     close: 'Close',
-    none: '—',
+    none: '-',
   },
 
   nav: {
@@ -31,7 +31,7 @@ export const en: Dictionary = {
     filterOnTrack: 'On track',
     newEquipment: 'New equipment',
     emptyTitle: 'Start by adding equipment',
-    emptyBody: 'A fire extinguisher, an air conditioner, a generator — whatever you must remember to service.',
+    emptyBody: 'A fire extinguisher, an air conditioner, a generator: whatever you must remember to service.',
     emptyAction: 'Add equipment',
     noResultsTitle: 'Nothing here',
     noResultsBody: 'No equipment matches this filter or search.',
@@ -118,7 +118,7 @@ export const en: Dictionary = {
   backup: {
     allSaved: 'Everything copied to the cloud',
     allSavedAt: (time: string) => `Last copy at ${time}`,
-    sending: 'Uploading copy…',
+    sending: 'Uploading copy...',
     pendingTitle: (equipment: number, maintenance: number) => {
       const parts: string[] = [];
       if (equipment > 0) {
@@ -142,7 +142,7 @@ export const en: Dictionary = {
   about: {
     howItWorksTitle: 'How your data is kept',
     howItWorksBody:
-      'Everything you enter is saved right here on the phone, even with no internet. Once you are connected, a copy uploads to the cloud automatically — so nothing is lost if the phone is replaced.',
+      'Everything you enter is saved right here on the phone, even with no internet. Once you are connected, a copy uploads to the cloud automatically, so nothing is lost if the phone is replaced.',
     statusTitle: 'Cloud copy',
     sendNow: 'Upload now',
     fetchFromCloud: 'Fetch from cloud',

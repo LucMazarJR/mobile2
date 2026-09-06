@@ -1,7 +1,7 @@
 // Category is free text, so it is matched loosely against known equipment
-// words and falls back to a generic cog. Icons only — categories deliberately
-// get no colour of their own, because red/amber/green already mean urgency and
-// a second colour dimension would compete with it.
+// words and falls back to a generic cog. Icons only, because categories
+// deliberately get no colour of their own: red, amber and green already mean
+// urgency, and a second colour dimension would compete with that.
 
 type IconName = React.ComponentProps<
   typeof import('@expo/vector-icons/MaterialCommunityIcons').default

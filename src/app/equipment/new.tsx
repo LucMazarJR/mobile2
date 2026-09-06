@@ -16,7 +16,7 @@ export default function NewEquipment() {
 
   async function save(values: EquipmentInput) {
     try {
-      // Saved locally first — that is what makes this work with no signal. The
+      // Saved locally first. That is what makes this work with no signal. The
       // upload right after is only an opportunistic attempt.
       await createEquipment(db, values);
       void uploadNow();

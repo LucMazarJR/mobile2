@@ -3,7 +3,7 @@ import { useColorScheme } from 'react-native';
 // "Oficina" palette.
 //
 // The rule that drives everything: in this app red, amber and green are DATA,
-// not decoration — they encode how urgent a service is. So the brand colour has
+// not decoration. They encode how urgent a service is, so the brand colour has
 // to stay out of that ramp entirely. Deep petroleum teal reads as instrument
 // panel and tooling rather than generic SaaS blue, and it leaves the whole warm
 // half of the spectrum free for urgency.

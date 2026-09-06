@@ -9,7 +9,7 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(url && anonKey);
 
-/** Host only — shown in the About screen. The key is never displayed. */
+/** Host only, shown in the About screen. The key is never displayed. */
 export const cloudHost = url ? url.replace(/^https?:\/\//, '') : null;
 
 if (!isSupabaseConfigured) {
@@ -25,8 +25,8 @@ export const supabase =
   url && anonKey
     ? createClient(url, anonKey, {
         auth: {
-          // There is no login, so the client never needs to keep a session —
-          // that is what makes AsyncStorage unnecessary here.
+          // There is no login, so the client never needs to keep a session,
+          // which is what makes AsyncStorage unnecessary here.
           persistSession: false,
           autoRefreshToken: false,
           detectSessionInUrl: false,

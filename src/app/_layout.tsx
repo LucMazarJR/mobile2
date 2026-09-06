@@ -7,7 +7,7 @@ import {
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View, useColorScheme } from 'react-native';
 
 import { migrateDatabase } from '@/db/schema';
@@ -59,15 +59,22 @@ function Navigator() {
 export default function RootLayout() {
   const scheme = useColorScheme();
 
-  // A font must never be able to hang the app: if it fails to load, the screens
-  // render on the system font instead.
   const [fontsLoaded, fontError] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
     Inter_700Bold,
   });
 
-  if (!fontsLoaded && !fontError) return <Loading />;
+  // A font can never be allowed to hold the app hostage. If it errors, or if it
+  // simply never resolves, the screens go ahead on the system font.
+  const [waitedLongEnough, setWaitedLongEnough] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setWaitedLongEnough(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!fontsLoaded && !fontError && !waitedLongEnough) return <Loading />;
 
   return (
     <Suspense fallback={<Loading />}>

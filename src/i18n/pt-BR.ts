@@ -15,7 +15,7 @@ export const ptBR = {
     edit: 'Editar',
     retry: 'Tentar de novo',
     close: 'Fechar',
-    none: '—',
+    none: '-',
   },
 
   nav: {
@@ -37,7 +37,7 @@ export const ptBR = {
     newEquipment: 'Novo equipamento',
     emptyTitle: 'Comece cadastrando um equipamento',
     emptyBody:
-      'Um extintor, um ar-condicionado, um gerador — o que você precisa lembrar de revisar.',
+      'Um extintor, um ar-condicionado, um gerador: o que você precisa lembrar de revisar.',
     emptyAction: 'Cadastrar equipamento',
     noResultsTitle: 'Nada por aqui',
     noResultsBody: 'Nenhum equipamento encontrado com esse filtro ou essa busca.',
@@ -125,7 +125,7 @@ export const ptBR = {
   backup: {
     allSaved: 'Tudo com cópia na nuvem',
     allSavedAt: (time: string) => `Última cópia às ${time}`,
-    sending: 'Enviando cópia…',
+    sending: 'Enviando cópia...',
     pendingTitle: (equipment: number, maintenance: number) => {
       const parts: string[] = [];
       if (equipment > 0) {
@@ -149,7 +149,7 @@ export const ptBR = {
   about: {
     howItWorksTitle: 'Como seus dados ficam guardados',
     howItWorksBody:
-      'Tudo que você registra é salvo na hora aqui no celular, mesmo sem internet. Quando houver conexão, uma cópia sobe para a nuvem automaticamente — assim nada se perde se o aparelho for trocado.',
+      'Tudo que você registra é salvo na hora aqui no celular, mesmo sem internet. Quando houver conexão, uma cópia sobe para a nuvem automaticamente, assim nada se perde se o aparelho for trocado.',
     statusTitle: 'Cópia na nuvem',
     sendNow: 'Enviar agora',
     fetchFromCloud: 'Buscar da nuvem',
