@@ -18,6 +18,10 @@ Por isso o app é **offline-first**: tudo é gravado na hora no banco local do
 aparelho (SQLite) e uma cópia sobe para o banco online (Supabase/PostgreSQL)
 assim que a conexão volta.
 
+Os equipamentos podem ser agrupados em **setores** (cozinha, garagem, bloco A),
+para o responsável conseguir perguntar "o que está pendente na cozinha" em vez
+de percorrer uma lista única.
+
 ## Tecnologias
 
 | Camada | Tecnologia |
@@ -97,6 +101,7 @@ que foi editado aqui sobrevive, e o que foi apagado aqui não ressuscita.
 src/
   app/                       telas (rotas do Expo Router)
     index.tsx                lista de equipamentos
+    sectors.tsx              criação e gestão dos setores
     about.tsx                como os dados são guardados + detalhes técnicos
     equipment/
       new.tsx                cadastro
