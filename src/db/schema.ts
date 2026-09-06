@@ -15,7 +15,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 // Portuguese tables because that is what shipped on real devices. Step 3
 // renames them. Rewriting step 1 would break every phone that already ran it.
 
-const TARGET_VERSION = 4;
+const TARGET_VERSION = 5;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
@@ -50,12 +50,14 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
       );
     `);
     version = 1;
+    await setVersion(db, 1);
   }
 
   if (version < 2) {
     await addColumnIfMissing(db, 'equipamentos', 'deleted_at', 'TEXT');
     await addColumnIfMissing(db, 'manutencoes', 'deleted_at', 'TEXT');
     version = 2;
+    await setVersion(db, 2);
   }
 
   if (version < 3) {
@@ -120,6 +122,7 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     `);
 
     version = 3;
+    await setVersion(db, 3);
   }
 
   if (version < 4) {
@@ -144,9 +147,39 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     `);
 
     version = 4;
+    await setVersion(db, 4);
   }
 
-  await db.execAsync(`PRAGMA user_version = ${TARGET_VERSION}`);
+  if (version < 5) {
+    // Step 4 could mark itself done without having created anything, back when
+    // the version was written only at the very end of the run. This step redoes
+    // that work; every statement is guarded, so on a healthy database it costs
+    // nothing.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS sectors (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        synced INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+    await addColumnIfMissing(db, 'equipment', 'sector_id', 'TEXT');
+    await db.execAsync(
+      'CREATE INDEX IF NOT EXISTS idx_equipment_sector ON equipment(sector_id);'
+    );
+
+    version = 5;
+    await setVersion(db, 5);
+  }
+}
+
+// Written right after each step succeeds, never once at the end: a run that
+// stops halfway has to leave behind a version that tells the truth, otherwise
+// the next start skips work that never happened.
+async function setVersion(db: SQLiteDatabase, version: number): Promise<void> {
+  await db.execAsync(`PRAGMA user_version = ${version}`);
 }
 
 // SQLite has no ALTER TABLE ADD COLUMN IF NOT EXISTS: running it twice throws

@@ -93,7 +93,14 @@ export function BackupProvider({ children }: { children: ReactNode }) {
 
   const fetchFromCloud = useCallback(async () => {
     try {
-      const downloaded = await downloadFromCloud(db);
+      const { downloaded, problems } = await downloadFromCloud(db);
+
+      if (problems.length > 0) {
+        const detail = problems.join(' | ');
+        setLastErrorDetail(detail);
+        console.warn('[cloud copy] some tables could not be read:', detail);
+      }
+
       if (downloaded > 0) setRevision((current) => current + 1);
       await refreshPending();
       return downloaded;

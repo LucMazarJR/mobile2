@@ -11,6 +11,12 @@ export type UploadResult =
 
 export type PendingCounts = Record<SyncedTable, number>;
 
+export type DownloadResult = {
+  downloaded: number;
+  /** Tables the cloud could not hand over, kept for the technical panel. */
+  problems: string[];
+};
+
 // Being offline is this app's normal state, not an error: the technician is
 // usually in a plant room or a basement. So a network failure is kept separate
 // from a real one, because only the second deserves an alarm on screen.
@@ -95,14 +101,20 @@ const DATE_COLUMNS = ['created_at', 'updated_at', 'performed_at', 'deleted_at'];
 // IGNORE, local always wins. That kills every conflict class at once: a row
 // edited here survives, a row deleted here cannot come back, and a row deleted
 // on another phone arrives with deleted_at already set, so it stays hidden.
-export async function downloadFromCloud(db: SQLiteDatabase): Promise<number> {
-  if (!supabase) return 0;
+export async function downloadFromCloud(db: SQLiteDatabase): Promise<DownloadResult> {
+  if (!supabase) return { downloaded: 0, problems: [] };
 
   let downloaded = 0;
+  const problems: string[] = [];
 
   for (const table of SYNCED_TABLES) {
+    // One table failing must not cost the others. A cloud database that is a
+    // schema version behind still has most of the data worth restoring.
     const { data, error } = await supabase.from(table).select('*');
-    if (error) throw new Error(`${table}: ${error.message}`);
+    if (error) {
+      problems.push(`${table}: ${error.message}`);
+      continue;
+    }
     if (!data || data.length === 0) continue;
 
     await db.withTransactionAsync(async () => {
@@ -124,5 +136,5 @@ export async function downloadFromCloud(db: SQLiteDatabase): Promise<number> {
     });
   }
 
-  return downloaded;
+  return { downloaded, problems };
 }
