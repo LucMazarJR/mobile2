@@ -1,10 +1,12 @@
+import type { SQLiteDatabase } from 'expo-sqlite';
+
 // Estrutura do banco local (SQLite). É criada uma única vez, na abertura do app,
 // através do onInit do <SQLiteProvider>.
 //
 // A coluna "synced" existe só aqui no aparelho: ela marca as linhas que ainda
 // não foram enviadas ao Supabase. No Postgres essa coluna não existe, porque
 // tudo que está lá, por definição, já foi sincronizado.
-export async function migrarBanco(db) {
+export async function migrarBanco(db: SQLiteDatabase): Promise<void> {
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
@@ -37,5 +39,7 @@ export async function migrarBanco(db) {
 }
 
 // Tabelas enviadas ao Supabase, na ordem em que precisam ser enviadas:
-// equipamentos primeiro, senão a chave estrangeira de manutencoes falha lá no Postgres.
-export const TABELAS_SINCRONIZAVEIS = ['equipamentos', 'manutencoes'];
+// equipamentos primeiro, senão a chave estrangeira de manutencoes falha no Postgres.
+export const TABELAS_SINCRONIZAVEIS = ['equipamentos', 'manutencoes'] as const;
+
+export type TabelaSincronizavel = (typeof TABELAS_SINCRONIZAVEIS)[number];

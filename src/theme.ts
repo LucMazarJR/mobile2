@@ -13,8 +13,8 @@ export const cores = {
   alertaFraco: '#FDECEC',
   aviso: '#B45309',
   avisoFraco: '#FEF3E2',
-};
+} as const;
 
-export const espaco = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 };
+export const espaco = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;
 
-export const raio = { sm: 8, md: 12, lg: 16 };
+export const raio = { sm: 8, md: 12, lg: 16 } as const;

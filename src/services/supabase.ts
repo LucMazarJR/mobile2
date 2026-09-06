@@ -11,14 +11,15 @@ const chaveAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 // só a sincronização fica desligada, o SQLite continua normal.
 export const supabaseConfigurado = Boolean(url && chaveAnon);
 
-export const supabase = supabaseConfigurado
-  ? createClient(url, chaveAnon, {
-      auth: {
-        // Não há login no app, então o cliente não precisa guardar sessão
-        // (é isso que dispensa o AsyncStorage como dependência).
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    })
-  : null;
+export const supabase =
+  url && chaveAnon
+    ? createClient(url, chaveAnon, {
+        auth: {
+          // Não há login no app, então o cliente não precisa guardar sessão
+          // (é isso que dispensa o AsyncStorage como dependência).
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      })
+    : null;

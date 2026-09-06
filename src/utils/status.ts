@@ -1,19 +1,32 @@
+import type { EquipamentoComResumo } from '@/db/tipos';
 import { cores } from '@/theme';
 
 const UM_DIA = 24 * 60 * 60 * 1000;
 
+export type Status = {
+  chave: 'atrasado' | 'proximo' | 'em-dia';
+  rotulo: string;
+  cor: string;
+  fundo: string;
+  proxima: Date;
+};
+
+type DadosDeStatus = Pick<
+  EquipamentoComResumo,
+  'ultima_manutencao' | 'criado_em' | 'intervalo_dias'
+>;
+
 // Regra de status: conta os dias a partir da última manutenção (ou da data de
 // cadastro, se o equipamento nunca recebeu manutenção) e compara com o
 // intervalo configurado para aquele equipamento.
-export function calcularStatus(equipamento) {
+export function calcularStatus(equipamento: DadosDeStatus): Status {
   const base = equipamento.ultima_manutencao || equipamento.criado_em;
   const intervalo = equipamento.intervalo_dias || 30;
 
   const proxima = new Date(base);
   proxima.setDate(proxima.getDate() + intervalo);
 
-  const hoje = new Date();
-  const diasRestantes = Math.ceil((proxima - hoje) / UM_DIA);
+  const diasRestantes = Math.ceil((proxima.getTime() - Date.now()) / UM_DIA);
 
   if (diasRestantes < 0) {
     return {
@@ -44,7 +57,7 @@ export function calcularStatus(equipamento) {
   };
 }
 
-export function formatarData(iso) {
+export function formatarData(iso: string | null | undefined): string {
   if (!iso) return '—';
   const data = new Date(iso);
   if (Number.isNaN(data.getTime())) return '—';
@@ -53,7 +66,7 @@ export function formatarData(iso) {
 
 // Converte "06/09/2026" em ISO. Devolve null se a data for inválida,
 // para o formulário conseguir avisar o usuário.
-export function dataBrParaISO(texto) {
+export function dataBrParaISO(texto: string): string | null {
   const partes = (texto || '').trim().split('/');
   if (partes.length !== 3) return null;
 
@@ -66,6 +79,6 @@ export function dataBrParaISO(texto) {
   return data.toISOString();
 }
 
-export function hojeBr() {
+export function hojeBr(): string {
   return new Date().toLocaleDateString('pt-BR');
 }
