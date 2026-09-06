@@ -1,52 +1,81 @@
--- Estrutura do banco online (PostgreSQL / Supabase).
+-- Cloud database structure (PostgreSQL / Supabase).
 --
--- Como usar: painel do Supabase > SQL Editor > New query > cole este arquivo
--- inteiro > Run. Pode ser executado mais de uma vez sem quebrar nada.
+-- How to use: Supabase dashboard > SQL Editor > New query > paste this whole
+-- file > Run. It is safe to run more than once.
 --
--- As colunas são as mesmas do SQLite local, menos "synced", que é controle
--- interno do aparelho para saber o que ainda falta enviar.
+-- Columns match the local SQLite tables, minus "synced", which is bookkeeping
+-- that only makes sense on the phone.
 
-create table if not exists equipamentos (
+create table if not exists equipment (
   id uuid primary key,
-  nome text not null,
-  categoria text,
-  localizacao text,
-  intervalo_dias integer not null default 30,
-  criado_em timestamptz not null default now(),
-  atualizado_em timestamptz not null default now()
+  name text not null,
+  category text,
+  location text,
+  interval_days integer not null default 30,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
-create table if not exists manutencoes (
+create table if not exists maintenance (
   id uuid primary key,
-  equipamento_id uuid not null references equipamentos(id) on delete cascade,
-  tipo text not null check (tipo in ('preventiva', 'corretiva')),
-  descricao text,
-  responsavel text,
-  data timestamptz not null,
-  criado_em timestamptz not null default now()
+  equipment_id uuid not null references equipment(id) on delete cascade,
+  type text not null check (type in ('preventive', 'corrective')),
+  description text,
+  technician text,
+  performed_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  deleted_at timestamptz
 );
 
-create index if not exists idx_manutencoes_equipamento
-  on manutencoes(equipamento_id);
+create index if not exists idx_maintenance_equipment
+  on maintenance(equipment_id);
 
--- Exclusão é lógica nos dois lados. O app não apaga a linha: preenche
--- deleted_at e reenvia. Sem isso o equipamento apagado no celular ficaria
--- para sempre aqui, porque o envio só sabe mandar linhas que existem.
-alter table equipamentos add column if not exists deleted_at timestamptz;
-alter table manutencoes  add column if not exists deleted_at timestamptz;
+-- Deletion is logical on both sides. The app never removes a row: it fills in
+-- deleted_at and uploads again. Without this, equipment deleted on the phone
+-- would live here forever, because the upload only sends rows that still exist.
 
--- O Supabase liga Row Level Security por padrão e, sem nenhuma política,
--- bloqueia tudo que vem da chave anon — inclusive os INSERTs do app.
--- Como este projeto não tem login, liberamos acesso público às duas tabelas.
--- (Decisão consciente de escopo acadêmico: em um app real isso ficaria
--- restrito ao usuário autenticado.)
-alter table equipamentos enable row level security;
-alter table manutencoes enable row level security;
+-- ---------------------------------------------------------------------------
+-- Carries over data from the first version, when the tables were named in
+-- Portuguese. Harmless if those tables never existed.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if to_regclass('public.equipamentos') is not null then
+    insert into equipment (id, name, category, location, interval_days, created_at, updated_at, deleted_at)
+      select id, nome, categoria, localizacao, intervalo_dias, criado_em, atualizado_em, deleted_at
+        from equipamentos
+      on conflict (id) do nothing;
+  end if;
 
-drop policy if exists acesso_publico_equipamentos on equipamentos;
-create policy acesso_publico_equipamentos on equipamentos
+  if to_regclass('public.manutencoes') is not null then
+    insert into maintenance (id, equipment_id, type, description, technician, performed_at, created_at, deleted_at)
+      select id, equipamento_id,
+             case tipo when 'preventiva' then 'preventive' else 'corrective' end,
+             descricao, responsavel, data, criado_em, deleted_at
+        from manutencoes
+      on conflict (id) do nothing;
+  end if;
+end $$;
+
+drop table if exists manutencoes;
+drop table if exists equipamentos;
+
+-- ---------------------------------------------------------------------------
+-- Access
+-- ---------------------------------------------------------------------------
+-- Supabase turns Row Level Security on by default and, with no policy at all,
+-- blocks everything coming from the anon key — including this app's writes.
+-- Since the project has no login, both tables are opened up.
+-- (A deliberate academic scope decision: a real app would restrict this to the
+-- signed-in user.)
+alter table equipment enable row level security;
+alter table maintenance enable row level security;
+
+drop policy if exists public_access_equipment on equipment;
+create policy public_access_equipment on equipment
   for all using (true) with check (true);
 
-drop policy if exists acesso_publico_manutencoes on manutencoes;
-create policy acesso_publico_manutencoes on manutencoes
+drop policy if exists public_access_maintenance on maintenance;
+create policy public_access_maintenance on maintenance
   for all using (true) with check (true);
