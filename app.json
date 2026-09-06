@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Controle de Manutenção",
-    "slug": "controle-manutencao",
+    "slug": "luciano",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -41,6 +41,19 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7052959e-e959-4a9c-915e-5de16e3b4662"
+      }
+    },
+    "owner": "lucianomazars-team",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/36cf00d9-2337-465c-afa5-8d150a4b0887"
     }
   }
 }
