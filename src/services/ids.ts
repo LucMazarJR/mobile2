@@ -1,12 +1,17 @@
 import * as Crypto from 'expo-crypto';
 
-// O id é gerado no aparelho (e não pelo banco) porque o equipamento precisa
-// ter um identificador definitivo já no cadastro offline: é esse id que vai
-// virar o QR Code impresso e colado no equipamento, antes de qualquer sync.
-export function novoId(): string {
+// Ids are generated on the phone rather than by the database because a piece of
+// equipment needs its final identifier the moment it is added, offline: that id
+// is what gets printed on the QR label stuck to the equipment itself.
+export function newId(): string {
   return Crypto.randomUUID();
 }
 
-export function agoraISO(): string {
+export function nowISO(): string {
   return new Date().toISOString();
+}
+
+/** Short, human-checkable form of an id, matching what goes on the printed tag. */
+export function tagCode(id: string): string {
+  return id.replace(/-/g, '').slice(0, 8).toUpperCase();
 }

@@ -1,84 +1,124 @@
-import type { EquipamentoComResumo } from '@/db/tipos';
-import { cores } from '@/theme';
+import type { EquipmentWithSummary } from '@/db/types';
+import type { Dictionary } from '@/i18n/pt-BR';
+import type { Palette } from '@/theme';
 
-const UM_DIA = 24 * 60 * 60 * 1000;
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
+export type StatusKey = 'overdue' | 'due-soon' | 'on-track';
 
 export type Status = {
-  chave: 'atrasado' | 'proximo' | 'em-dia';
-  rotulo: string;
-  cor: string;
-  fundo: string;
-  proxima: Date;
+  key: StatusKey;
+  /** Days until the next service; negative when overdue. */
+  daysLeft: number;
+  /** Null when the stored dates cannot be parsed. */
+  next: Date | null;
 };
 
-type DadosDeStatus = Pick<
-  EquipamentoComResumo,
-  'ultima_manutencao' | 'criado_em' | 'intervalo_dias'
+type StatusSource = Pick<
+  EquipmentWithSummary,
+  'last_maintenance' | 'created_at' | 'interval_days'
 >;
 
-// Regra de status: conta os dias a partir da última manutenção (ou da data de
-// cadastro, se o equipamento nunca recebeu manutenção) e compara com o
-// intervalo configurado para aquele equipamento.
-export function calcularStatus(equipamento: DadosDeStatus): Status {
-  const base = equipamento.ultima_manutencao || equipamento.criado_em;
-  const intervalo = equipamento.intervalo_dias || 30;
+// Status is derived, never stored: days counted from the last service — or from
+// the day the equipment was added, when it has never been serviced — compared
+// against its own interval.
+export function computeStatus(equipment: StatusSource): Status {
+  const base = equipment.last_maintenance || equipment.created_at;
+  const interval = equipment.interval_days || 30;
 
-  const proxima = new Date(base);
-  proxima.setDate(proxima.getDate() + intervalo);
+  const next = new Date(base);
 
-  const diasRestantes = Math.ceil((proxima.getTime() - Date.now()) / UM_DIA);
-
-  if (diasRestantes < 0) {
-    return {
-      chave: 'atrasado',
-      rotulo: `Atrasado ${Math.abs(diasRestantes)}d`,
-      cor: cores.alerta,
-      fundo: cores.alertaFraco,
-      proxima,
-    };
+  // A date that cannot be parsed would make toISOString() throw and take the
+  // whole screen down, so it degrades to "on track" with no due date instead.
+  if (Number.isNaN(next.getTime())) {
+    return { key: 'on-track', daysLeft: interval, next: null };
   }
 
-  if (diasRestantes <= 7) {
-    return {
-      chave: 'proximo',
-      rotulo: diasRestantes === 0 ? 'Vence hoje' : `Vence em ${diasRestantes}d`,
-      cor: cores.aviso,
-      fundo: cores.avisoFraco,
-      proxima,
-    };
+  next.setDate(next.getDate() + interval);
+  const daysLeft = Math.ceil((next.getTime() - Date.now()) / ONE_DAY);
+
+  if (daysLeft < 0) return { key: 'overdue', daysLeft, next };
+  if (daysLeft <= 7) return { key: 'due-soon', daysLeft, next };
+  return { key: 'on-track', daysLeft, next };
+}
+
+export function statusColors(status: Status, palette: Palette) {
+  switch (status.key) {
+    case 'overdue':
+      return { fg: palette.critical, bg: palette.criticalWash };
+    case 'due-soon':
+      return { fg: palette.warning, bg: palette.warningWash };
+    default:
+      return { fg: palette.ok, bg: palette.okWash };
   }
-
-  return {
-    chave: 'em-dia',
-    rotulo: `Em dia · ${diasRestantes}d`,
-    cor: cores.sucesso,
-    fundo: cores.sucessoFraco,
-    proxima,
-  };
 }
 
-export function formatarData(iso: string | null | undefined): string {
-  if (!iso) return '—';
-  const data = new Date(iso);
-  if (Number.isNaN(data.getTime())) return '—';
-  return data.toLocaleDateString('pt-BR');
+/** Compact label for the chip. */
+export function statusChipLabel(status: Status, t: Dictionary): string {
+  switch (status.key) {
+    case 'overdue':
+      return t.status.overdueChip(Math.abs(status.daysLeft));
+    case 'due-soon':
+      return status.daysLeft === 0 ? t.status.dueTodayChip : t.status.dueSoonChip(status.daysLeft);
+    default:
+      return t.status.onTrackChip;
+  }
 }
 
-// Converte "06/09/2026" em ISO. Devolve null se a data for inválida,
-// para o formulário conseguir avisar o usuário.
-export function dataBrParaISO(texto: string): string | null {
-  const partes = (texto || '').trim().split('/');
-  if (partes.length !== 3) return null;
-
-  const [dia, mes, ano] = partes.map((parte) => Number(parte));
-  if (!dia || !mes || !ano || ano < 1900) return null;
-
-  const data = new Date(ano, mes - 1, dia, 12, 0, 0);
-  if (data.getDate() !== dia || data.getMonth() !== mes - 1) return null;
-
-  return data.toISOString();
+/** Spelled-out sentence, used in the card footer and for screen readers. */
+export function statusFullLabel(status: Status, t: Dictionary): string {
+  switch (status.key) {
+    case 'overdue':
+      return t.status.overdueFull(Math.abs(status.daysLeft));
+    case 'due-soon':
+      return status.daysLeft === 0 ? t.status.dueTodayFull : t.status.dueSoonFull(status.daysLeft);
+    default:
+      return t.status.onTrackFull(status.daysLeft);
+  }
 }
 
-export function hojeBr(): string {
-  return new Date().toLocaleDateString('pt-BR');
+export function formatDate(value: Date | string | null | undefined, locale: string): string {
+  if (!value) return '—';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString(locale);
+}
+
+export function formatTime(value: Date | null, locale: string): string {
+  if (!value || Number.isNaN(value.getTime())) return '—';
+  return value.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+}
+
+/** Turns "06/09/2026" into an ISO string, or null when the date makes no sense. */
+export function parseLocalDate(text: string): string | null {
+  const parts = (text || '').trim().split('/');
+  if (parts.length !== 3) return null;
+
+  const [day, month, year] = parts.map((part) => Number(part));
+  if (!day || !month || !year || year < 1900) return null;
+
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  if (date.getDate() !== day || date.getMonth() !== month - 1) return null;
+
+  return date.toISOString();
+}
+
+export function toLocalDateInput(value: Date): string {
+  const day = String(value.getDate()).padStart(2, '0');
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}/${value.getFullYear()}`;
+}
+
+/** Adds slashes as the user types, so nobody has to reach for the symbol row. */
+export function maskDateInput(text: string): string {
+  const digits = text.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+export function isFuture(iso: string): boolean {
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+  return new Date(iso).getTime() > endOfToday.getTime();
 }

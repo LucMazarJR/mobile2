@@ -29,6 +29,12 @@ create table if not exists manutencoes (
 create index if not exists idx_manutencoes_equipamento
   on manutencoes(equipamento_id);
 
+-- Exclusão é lógica nos dois lados. O app não apaga a linha: preenche
+-- deleted_at e reenvia. Sem isso o equipamento apagado no celular ficaria
+-- para sempre aqui, porque o envio só sabe mandar linhas que existem.
+alter table equipamentos add column if not exists deleted_at timestamptz;
+alter table manutencoes  add column if not exists deleted_at timestamptz;
+
 -- O Supabase liga Row Level Security por padrão e, sem nenhuma política,
 -- bloqueia tudo que vem da chave anon — inclusive os INSERTs do app.
 -- Como este projeto não tem login, liberamos acesso público às duas tabelas.

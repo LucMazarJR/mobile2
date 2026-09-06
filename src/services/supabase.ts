@@ -1,22 +1,32 @@
-// O polyfill de URL precisa vir antes do supabase-js: o cliente usa a API
-// global URL, que o Hermes (motor JS do React Native) não traz por padrão.
+// The URL polyfill has to come before supabase-js: the client uses the global
+// URL API, which Hermes (React Native's JS engine) does not ship by default.
 import 'react-native-url-polyfill/auto';
 
 import { createClient } from '@supabase/supabase-js';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const chaveAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-// O app funciona 100% offline mesmo sem as credenciais preenchidas: nesse caso
-// só a sincronização fica desligada, o SQLite continua normal.
-export const supabaseConfigurado = Boolean(url && chaveAnon);
+export const isSupabaseConfigured = Boolean(url && anonKey);
+
+/** Host only — shown in the About screen. The key is never displayed. */
+export const cloudHost = url ? url.replace(/^https?:\/\//, '') : null;
+
+if (!isSupabaseConfigured) {
+  // Aimed at whoever is running the project, not at the person using the app.
+  console.warn(
+    '[config] EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY are missing. ' +
+      'Copy .env.example to .env and restart with "npx expo start -c". ' +
+      'The cloud copy stays off; the app works normally offline.'
+  );
+}
 
 export const supabase =
-  url && chaveAnon
-    ? createClient(url, chaveAnon, {
+  url && anonKey
+    ? createClient(url, anonKey, {
         auth: {
-          // Não há login no app, então o cliente não precisa guardar sessão
-          // (é isso que dispensa o AsyncStorage como dependência).
+          // There is no login, so the client never needs to keep a session —
+          // that is what makes AsyncStorage unnecessary here.
           persistSession: false,
           autoRefreshToken: false,
           detectSessionInUrl: false,
