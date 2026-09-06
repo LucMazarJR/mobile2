@@ -104,6 +104,10 @@ export default function Sectors() {
           { paddingBottom: insets.bottom + spacing.xl },
           sectors.length === 0 && styles.contentEmpty,
         ]}
+        // Without this the first tap on the button below only dismisses the
+        // keyboard and never reaches it, so creating a sector would take two
+        // taps for no visible reason.
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View>
             <Text style={[type.support, styles.intro, { color: palette.inkMuted }]}>
