@@ -84,31 +84,63 @@ variáveis de ambiente só entram no bundle quando o Metro sobe.
 
 Para alguém testar o app sem precisar do Expo Go e sem o servidor rodando, o
 caminho é o build na nuvem do Expo (EAS). O plano gratuito atende, e ele resolve
-a assinatura do APK sozinho.
+a assinatura do APK sozinho, que é a parte chata de fazer na mão.
+
+O `eas-cli` já está nas dependências do projeto, então `npx eas` funciona depois
+do `npm install`. Não precisa instalar nada global.
+
+### Passo a passo
+
+**1. Criar uma conta**
+
+Em [expo.dev](https://expo.dev), gratuita. Depois, no terminal, na pasta do
+projeto:
 
 ```bash
-npx eas login          # conta gratuita em expo.dev
-npx eas build -p android --profile preview
+npx eas login
 ```
 
-O perfil `preview` do [`eas.json`](eas.json) já está configurado para gerar
-**APK** (e não AAB), que é o formato que instala direto no aparelho. Ao final o
-comando devolve um link de download que pode ser enviado para qualquer pessoa.
-Quem receber precisa autorizar "instalar de fontes desconhecidas".
-
-### Atenção com as credenciais
-
-O build acontece na nuvem e o `.env` não sobe junto, porque está no
-`.gitignore`. Sem passar as variáveis, o APK sai funcionando normalmente
-offline, mas com a cópia na nuvem desligada. Para levá-las junto:
+**2. Vincular o projeto à sua conta**
 
 ```bash
-npx eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL --value https://seuprojeto.supabase.co
-npx eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value eyJhbGciOi...
+npx eas init
+```
+
+Isso gera um `projectId` e grava no `app.json`. Só precisa ser feito uma vez;
+o outro integrante do grupo pula este passo depois que o arquivo for commitado.
+
+**3. Registrar as credenciais do Supabase**
+
+O build acontece na nuvem e o `.env` não sobe junto, porque está no
+`.gitignore`. Sem este passo o APK sai funcionando offline, mas com a cópia na
+nuvem desligada.
+
+```bash
+npx eas env:set preview --name EXPO_PUBLIC_SUPABASE_URL --value https://seuprojeto.supabase.co --visibility plaintext
+
+npx eas env:set preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value eyJhbGciOi... --visibility plaintext
 ```
 
 A chave `anon` é pública por natureza, ela já fica embutida em qualquer build do
-app. Quem não deve sair daqui de jeito nenhum é a `service_role`.
+app. Quem não pode sair do painel do Supabase de jeito nenhum é a
+`service_role`.
+
+**4. Gerar o APK**
+
+```bash
+npx eas build -p android --profile preview
+```
+
+O perfil `preview` do [`eas.json`](eas.json) está configurado para gerar **APK**
+e não AAB, que é o formato que instala direto no aparelho. O primeiro build
+costuma levar de 10 a 20 minutos por causa da fila do plano gratuito.
+
+**5. Enviar**
+
+Ao terminar, o comando mostra um link de download. Ele também fica em
+[expo.dev](https://expo.dev), na aba Builds do projeto. Mande esse link para
+quem for testar. No celular, o Android vai pedir para autorizar a instalação de
+fontes desconhecidas.
 
 ## Como a cópia na nuvem funciona
 
