@@ -1,19 +1,22 @@
-# Controle de Manutenção de Equipamentos
+# Controle de Manutenção
 
-Aplicativo mobile (React Native + Expo) para registrar e acompanhar a manutenção
-de equipamentos — extintores, ar-condicionados, geradores, máquinas de laboratório
+Aplicativo mobile (React Native + Expo) para acompanhar a manutenção de
+equipamentos — extintores, ar-condicionados, geradores, máquinas de laboratório
 e afins.
+
+Interface em **português e inglês**; o código, os arquivos e o banco de dados
+estão em inglês.
 
 ## O problema
 
-Escolas, condomínios e pequenas empresas controlam manutenção em planilha ou papel.
-O resultado é que ninguém sabe com segurança quando cada equipamento foi revisado
-pela última vez, o que foi feito e por quem. Pior: o técnico costuma estar
-justamente onde não há sinal de internet — casa de máquinas, subsolo, depósito.
+Escolas, condomínios e pequenas empresas controlam manutenção em planilha ou
+papel. O resultado é que ninguém sabe com segurança quando cada equipamento foi
+revisado pela última vez, o que foi feito e por quem. Pior: o técnico costuma
+estar justamente onde não há sinal — casa de máquinas, subsolo, depósito.
 
 Por isso o app é **offline-first**: tudo é gravado na hora no banco local do
-aparelho (SQLite) e enviado ao banco online (Supabase/PostgreSQL) assim que a
-conexão volta.
+aparelho (SQLite) e uma cópia sobe para o banco online (Supabase/PostgreSQL)
+assim que a conexão volta.
 
 ## Tecnologias
 
@@ -55,10 +58,13 @@ EXPO_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
-O `.env` não vai para o Git. Cada integrante do grupo cria o seu.
+> A URL termina em `.supabase.co` e nada mais. Se você copiar o "RESTful
+> endpoint" do painel, ela vem com `/rest/v1/` no final e toda requisição falha
+> com `PGRST125` — o cliente já acrescenta esse caminho sozinho.
 
-> Sem essas credenciais o app continua funcionando normalmente offline — apenas
-> a sincronização fica desativada, com um aviso na tela inicial.
+O `.env` não vai para o Git; cada integrante do grupo cria o seu. Sem essas
+credenciais o app continua funcionando offline — apenas a cópia na nuvem fica
+desligada.
 
 ### 4. Iniciar o app
 
@@ -67,45 +73,68 @@ npx expo start
 ```
 
 Leia o QR Code com o app **Expo Go** no celular, ou pressione `a` para abrir num
-emulador Android.
+emulador Android. Depois de mexer no `.env`, reinicie com `npx expo start -c`:
+variáveis de ambiente só entram no bundle quando o Metro sobe.
 
-## Como a sincronização funciona
+## Como a cópia na nuvem funciona
 
 Toda gravação acontece primeiro no SQLite, com a coluna `synced = 0`. Um serviço
-de sincronização envia as linhas pendentes ao Supabase e marca `synced = 1`.
+envia as linhas pendentes ao Supabase e marca `synced = 1`. O envio é disparado
+quando a conexão volta, quando o app retorna ao primeiro plano, ao puxar a lista
+para baixo, e logo após cada gravação.
 
-A sincronização é disparada quando:
+Exclusão é **lógica**: o app preenche `deleted_at` e reenvia a linha, em vez de
+apagá-la. Sem isso o equipamento apagado no celular ficaria para sempre na
+nuvem, porque o envio só sabe mandar linhas que ainda existem.
 
-- a conexão de rede volta;
-- o app retorna ao primeiro plano;
-- o usuário puxa a lista para baixo;
-- um novo registro é criado (tentativa imediata).
-
-Se o envio falhar, as linhas continuam pendentes e a próxima tentativa reenvia.
-A faixa no topo da tela inicial mostra quantos registros ainda faltam enviar.
+Na direção contrária, `INSERT OR IGNORE` traz da nuvem só o que este aparelho
+nunca viu — o local sempre vence. Isso resolve todos os conflitos de uma vez: o
+que foi editado aqui sobrevive, e o que foi apagado aqui não ressuscita.
 
 ## Estrutura do projeto
 
 ```
 src/
-  app/                    telas (rotas do Expo Router)
-    index.tsx             lista de equipamentos
-    equipamento/
-      novo.tsx            cadastro de equipamento
+  app/                       telas (rotas do Expo Router)
+    index.tsx                lista de equipamentos
+    about.tsx                como os dados são guardados + detalhes técnicos
+    equipment/
+      new.tsx                cadastro
       [id]/
-        index.tsx         ficha + histórico de manutenções
-        nova-manutencao.tsx
-  components/             componentes de interface reutilizáveis
-  db/                     schema do SQLite e funções de acesso aos dados
-  services/               cliente Supabase, sincronização e geração de ids
-  utils/                  cálculo de status e formatação de datas
+        index.tsx            ficha + histórico
+        edit.tsx             edição
+        maintenance.tsx      registrar/editar manutenção
+  components/                componentes de interface reutilizáveis
+  db/                        schema, migrações e acesso aos dados
+  i18n/                      textos em pt-BR e en
+  services/                  cliente Supabase, cópia na nuvem, ids
+  utils/                     status, categorias e formatação
 supabase/
-  schema.sql              estrutura equivalente no PostgreSQL
+  schema.sql                 estrutura equivalente no PostgreSQL
 ```
+
+## Convenções
+
+- **Código, arquivos, tabelas e colunas em inglês.** Só a interface é bilíngue.
+- **Nenhum termo técnico chega ao usuário.** Nada de "sincronizar", "Supabase",
+  "banco", "registro" ou `.env` na tela — o conceito é "salvo aqui + cópia
+  automática na nuvem". Todo texto vive em [`src/i18n/pt-BR.ts`](src/i18n/pt-BR.ts),
+  que é a fonte de verdade; [`src/i18n/en.ts`](src/i18n/en.ts) é tipado contra
+  ela, então o TypeScript acusa qualquer tradução faltando.
+- **Erros de biblioteca nunca aparecem na interface.** Vão para o `console` e
+  para o painel de detalhes técnicos da tela Sobre.
+- **Migrações são um histórico, não uma foto.** `src/db/schema.ts` roda por
+  `PRAGMA user_version`; passos antigos não são reescritos, porque já rodaram em
+  aparelhos reais.
 
 ## Próxima etapa (2º bimestre)
 
-Leitura de **QR Code** com a câmera: cada equipamento recebe uma etiqueta impressa
-com seu identificador. O técnico escaneia a etiqueta, o app abre a ficha do
-equipamento direto e registra a leitura numa tabela `escaneamentos`, que também é
-sincronizada com o Supabase.
+Leitura de **QR Code** com a câmera: cada equipamento recebe uma etiqueta
+impressa com o próprio identificador — o mesmo "código da etiqueta" que já
+aparece na ficha hoje. O técnico escaneia, o app abre a ficha direto e registra a
+leitura numa terceira tabela, que sobe para a nuvem pelo mesmo mecanismo já
+existente.
+
+O identificador é gerado no aparelho, e não pelo banco, justamente por causa
+disso: o QR precisa poder ser impresso mesmo que o cadastro tenha sido feito
+offline.

@@ -16,7 +16,7 @@ import type { EquipmentWithSummary } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
 import { radius, spacing, type, usePalette } from '@/theme';
-import { computeStatus } from '@/utils/status';
+import { computeStatus, foldForSearch } from '@/utils/status';
 
 export default function EquipmentList() {
   const db = useSQLiteContext();
@@ -80,13 +80,13 @@ export default function EquipmentList() {
   }, [sorted]);
 
   const visible = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = foldForSearch(search.trim());
     return sorted.filter((item) => {
       if (filter !== 'all' && computeStatus(item).key !== filter) return false;
       if (!term) return true;
       return [item.name, item.category, item.location]
         .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(term));
+        .some((value) => foldForSearch(value!).includes(term));
     });
   }, [sorted, filter, search]);
 

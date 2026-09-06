@@ -117,6 +117,18 @@ export function maskDateInput(text: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
+// Searching for "manutencao" has to find "manutenção", so both sides of the
+// comparison get their accents stripped.
+export function foldForSearch(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    // After NFD an accent is a separate mark, so dropping everything that is
+    // not a plain letter, digit or space removes accents and punctuation in one
+    // pass — and keeps the pattern free of non-ASCII characters.
+    .replace(/[^a-z0-9\s]/g, '');
+}
+
 export function isFuture(iso: string): boolean {
   const endOfToday = new Date();
   endOfToday.setHours(23, 59, 59, 999);
