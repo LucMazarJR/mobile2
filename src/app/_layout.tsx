@@ -39,6 +39,7 @@ function Navigator() {
       }}>
       <Stack.Screen name="index" options={{ title: t.nav.home }} />
       <Stack.Screen name="about" options={{ title: t.nav.about, presentation: 'modal' }} />
+      <Stack.Screen name="sectors" options={{ title: t.sectors.title }} />
       <Stack.Screen
         name="equipment/new"
         options={{ title: t.nav.newEquipment, presentation: 'modal' }}

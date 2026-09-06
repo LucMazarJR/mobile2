@@ -43,6 +43,31 @@ export const ptBR = {
     noResultsBody: 'Nenhum equipamento encontrado com esse filtro ou essa busca.',
   },
 
+  sectors: {
+    title: 'Setores',
+    subtitle: 'Agrupe os equipamentos pela parte do prédio a que pertencem.',
+    manage: 'Setores',
+    none: 'Sem setor',
+    newSector: 'Novo setor',
+    namePlaceholder: 'Ex.: Cozinha, Bloco A, Garagem',
+    nameError: 'Dê um nome ao setor.',
+    create: 'Criar setor',
+    rename: 'Renomear setor',
+    saveName: 'Salvar nome',
+    countEquipment: (count: number) =>
+      count === 1 ? '1 equipamento' : `${count} equipamentos`,
+    countOverdue: (count: number) =>
+      count === 1 ? '1 atrasado' : `${count} atrasados`,
+    emptyTitle: 'Nenhum setor criado',
+    emptyBody:
+      'Setores servem para separar os equipamentos por área, como cozinha, garagem ou bloco.',
+    deleteTitle: (name: string) => `Apagar o setor ${name}?`,
+    deleteBody:
+      'Os equipamentos dele não são apagados, apenas ficam sem setor.',
+    pickerLabel: 'Setor',
+    pickerHint: 'Opcional. Ajuda a achar o equipamento depois.',
+  },
+
   card: {
     noLocation: 'Sem local definido',
     neverServiced: 'Nunca recebeu manutenção',

@@ -37,6 +37,30 @@ export const en: Dictionary = {
     noResultsBody: 'No equipment matches this filter or search.',
   },
 
+  sectors: {
+    title: 'Sectors',
+    subtitle: 'Group equipment by the part of the building it belongs to.',
+    manage: 'Sectors',
+    none: 'No sector',
+    newSector: 'New sector',
+    namePlaceholder: 'e.g. Kitchen, Building A, Garage',
+    nameError: 'Give the sector a name.',
+    create: 'Create sector',
+    rename: 'Rename sector',
+    saveName: 'Save name',
+    countEquipment: (count: number) =>
+      count === 1 ? '1 item of equipment' : `${count} items of equipment`,
+    countOverdue: (count: number) =>
+      count === 1 ? '1 overdue' : `${count} overdue`,
+    emptyTitle: 'No sectors yet',
+    emptyBody:
+      'Sectors split equipment by area, such as kitchen, garage or a building wing.',
+    deleteTitle: (name: string) => `Delete the ${name} sector?`,
+    deleteBody: 'Its equipment is not deleted, it simply ends up with no sector.',
+    pickerLabel: 'Sector',
+    pickerHint: 'Optional. Makes the equipment easier to find later.',
+  },
+
   card: {
     noLocation: 'No place set',
     neverServiced: 'Never serviced',

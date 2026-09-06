@@ -6,11 +6,20 @@
 -- Columns match the local SQLite tables, minus "synced", which is bookkeeping
 -- that only makes sense on the phone.
 
+create table if not exists sectors (
+  id uuid primary key,
+  name text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
 create table if not exists equipment (
   id uuid primary key,
   name text not null,
   category text,
   location text,
+  sector_id uuid references sectors(id) on delete set null,
   interval_days integer not null default 30,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -28,8 +37,13 @@ create table if not exists maintenance (
   deleted_at timestamptz
 );
 
+alter table equipment add column if not exists sector_id uuid references sectors(id) on delete set null;
+
 create index if not exists idx_maintenance_equipment
   on maintenance(equipment_id);
+
+create index if not exists idx_equipment_sector
+  on equipment(sector_id);
 
 -- Deletion is logical on both sides. The app never removes a row: it fills in
 -- deleted_at and uploads again. Without this, equipment deleted on the phone
@@ -76,8 +90,13 @@ drop table if exists equipamentos;
 -- Since the project has no login, both tables are opened up.
 -- (A deliberate academic scope decision: a real app would restrict this to the
 -- signed-in user.)
+alter table sectors enable row level security;
 alter table equipment enable row level security;
 alter table maintenance enable row level security;
+
+drop policy if exists public_access_sectors on sectors;
+create policy public_access_sectors on sectors
+  for all using (true) with check (true);
 
 drop policy if exists public_access_equipment on equipment;
 create policy public_access_equipment on equipment

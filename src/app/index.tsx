@@ -1,5 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
@@ -12,6 +12,7 @@ import EmptyState from '@/components/EmptyState';
 import EquipmentCard from '@/components/EquipmentCard';
 import FilterChips, { type FilterKey } from '@/components/FilterChips';
 import { listEquipment } from '@/db/equipment';
+import { findSector } from '@/db/sectors';
 import type { EquipmentWithSummary } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
@@ -19,6 +20,7 @@ import { radius, spacing, type, usePalette } from '@/theme';
 import { computeStatus, foldForSearch } from '@/utils/status';
 
 export default function EquipmentList() {
+  const { sectorId } = useLocalSearchParams<{ sectorId?: string }>();
   const db = useSQLiteContext();
   const router = useRouter();
   const palette = usePalette();
@@ -27,14 +29,16 @@ export default function EquipmentList() {
   const { uploadNow, fetchFromCloud, refreshPending, revision } = useBackup();
 
   const [equipment, setEquipment] = useState<EquipmentWithSummary[]>([]);
+  const [sectorName, setSectorName] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setEquipment(await listEquipment(db));
+    setSectorName(sectorId ? ((await findSector(db, sectorId))?.name ?? null) : null);
     await refreshPending();
-  }, [db, refreshPending]);
+  }, [db, sectorId, refreshPending]);
 
   useFocusEffect(
     useCallback(() => {
@@ -60,13 +64,14 @@ export default function EquipmentList() {
   // The product exists to answer "what needs attention now", so the list leads
   // with the most overdue rather than with whatever starts with A.
   const sorted = useMemo(() => {
-    return [...equipment].sort((a, b) => {
+    const scoped = sectorId ? equipment.filter((item) => item.sector_id === sectorId) : equipment;
+    return [...scoped].sort((a, b) => {
       const left = computeStatus(a);
       const right = computeStatus(b);
       if (left.daysLeft !== right.daysLeft) return left.daysLeft - right.daysLeft;
       return a.name.localeCompare(b.name);
     });
-  }, [equipment]);
+  }, [equipment, sectorId]);
 
   const counts = useMemo(() => {
     const result: Record<FilterKey, number> = {
@@ -84,7 +89,7 @@ export default function EquipmentList() {
     return sorted.filter((item) => {
       if (filter !== 'all' && computeStatus(item).key !== filter) return false;
       if (!term) return true;
-      return [item.name, item.category, item.location]
+      return [item.name, item.category, item.location, item.sector_name]
         .filter(Boolean)
         .some((value) => foldForSearch(value!).includes(term));
     });
@@ -96,18 +101,32 @@ export default function EquipmentList() {
     <View style={[styles.screen, { backgroundColor: palette.surfaceSunken }]}>
       <Stack.Screen
         options={{
+          title: sectorName ?? t.nav.home,
           headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/about')}
-              accessibilityRole="button"
-              accessibilityLabel={t.nav.about}
-              hitSlop={12}>
-              <MaterialCommunityIcons
-                name="information-outline"
-                size={22}
-                color={palette.inkMuted}
-              />
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => router.push('/sectors')}
+                accessibilityRole="button"
+                accessibilityLabel={t.sectors.manage}
+                hitSlop={12}>
+                <MaterialCommunityIcons
+                  name="folder-outline"
+                  size={22}
+                  color={palette.inkMuted}
+                />
+              </Pressable>
+              <Pressable
+                onPress={() => router.push('/about')}
+                accessibilityRole="button"
+                accessibilityLabel={t.nav.about}
+                hitSlop={12}>
+                <MaterialCommunityIcons
+                  name="information-outline"
+                  size={22}
+                  color={palette.inkMuted}
+                />
+              </Pressable>
+            </View>
           ),
         }}
       />
@@ -223,6 +242,7 @@ export default function EquipmentList() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   content: { padding: spacing.lg },
   contentEmpty: { flexGrow: 1 },
   searchBox: {

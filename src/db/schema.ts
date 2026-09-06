@@ -15,7 +15,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 // Portuguese tables because that is what shipped on real devices. Step 3
 // renames them. Rewriting step 1 would break every phone that already ran it.
 
-const TARGET_VERSION = 3;
+const TARGET_VERSION = 4;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
@@ -122,6 +122,30 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     version = 3;
   }
 
+  if (version < 4) {
+    // Sectors group equipment by the part of the building it belongs to, so a
+    // caretaker can ask "what is pending in the kitchen" instead of scanning
+    // one long list.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS sectors (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        synced INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+
+    await addColumnIfMissing(db, 'equipment', 'sector_id', 'TEXT');
+
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_equipment_sector ON equipment(sector_id);
+    `);
+
+    version = 4;
+  }
+
   await db.execAsync(`PRAGMA user_version = ${TARGET_VERSION}`);
 }
 
@@ -144,8 +168,9 @@ export async function databaseVersion(db: SQLiteDatabase): Promise<number> {
   return row?.user_version ?? 0;
 }
 
-// Tables exchanged with the cloud, in upload order: equipment before
-// maintenance, otherwise the foreign key fails in Postgres.
-export const SYNCED_TABLES = ['equipment', 'maintenance'] as const;
+// Tables exchanged with the cloud, in upload order. Parents go first, or the
+// foreign keys fail in Postgres: a sector before the equipment that points at
+// it, and that equipment before its maintenance history.
+export const SYNCED_TABLES = ['sectors', 'equipment', 'maintenance'] as const;
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];

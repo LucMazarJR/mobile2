@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import Button from '@/components/Button';
 import Field from '@/components/Field';
-import type { EquipmentInput } from '@/db/types';
+import SectorPicker from '@/components/SectorPicker';
+import { createSector, listSectors } from '@/db/sectors';
+import type { EquipmentInput, SectorWithCount } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { spacing, type, usePalette } from '@/theme';
 
@@ -24,15 +27,32 @@ export default function EquipmentForm({
   onSubmit,
   onCancel,
 }: Props) {
+  const db = useSQLiteContext();
   const palette = usePalette();
   const { t } = useI18n();
 
+  const [sectors, setSectors] = useState<SectorWithCount[]>([]);
+  const [sectorId, setSectorId] = useState<string | null>(initial?.sectorId ?? null);
   const [name, setName] = useState(initial?.name ?? '');
   const [category, setCategory] = useState(initial?.category ?? '');
   const [location, setLocation] = useState(initial?.location ?? '');
   const [interval, setInterval] = useState(String(initial?.intervalDays ?? 30));
   const [errors, setErrors] = useState<{ name?: string; interval?: string }>({});
   const [saving, setSaving] = useState(false);
+
+  const reloadSectors = useCallback(async () => {
+    setSectors(await listSectors(db));
+  }, [db]);
+
+  useEffect(() => {
+    reloadSectors();
+  }, [reloadSectors]);
+
+  async function addSector(sectorName: string) {
+    const id = await createSector(db, sectorName);
+    await reloadSectors();
+    return id;
+  }
 
   async function handleSubmit() {
     const intervalDays = Number(interval);
@@ -53,6 +73,7 @@ export default function EquipmentForm({
         category: category.trim(),
         location: location.trim(),
         intervalDays,
+        sectorId,
       });
     } finally {
       setSaving(false);
@@ -85,6 +106,13 @@ export default function EquipmentForm({
           value={category}
           onChangeText={setCategory}
           placeholder={t.equipmentForm.categoryPlaceholder}
+        />
+
+        <SectorPicker
+          sectors={sectors}
+          value={sectorId}
+          onChange={setSectorId}
+          onCreate={addSector}
         />
 
         <Field

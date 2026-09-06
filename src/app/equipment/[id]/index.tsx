@@ -140,6 +140,7 @@ export default function EquipmentDetail() {
               <View style={[styles.divider, { backgroundColor: palette.line }]} />
 
               <Row label={t.detail.category} value={equipment.category || t.common.none} />
+              <Row label={t.sectors.pickerLabel} value={equipment.sector_name || t.sectors.none} />
               <Row label={t.detail.location} value={equipment.location || t.common.none} />
               <Row
                 label={t.detail.interval}

@@ -31,6 +31,7 @@ export default function EditEquipment() {
         category: found.category ?? '',
         location: found.location ?? '',
         intervalDays: found.interval_days,
+        sectorId: found.sector_id,
       });
     });
   }, [db, id, router]);

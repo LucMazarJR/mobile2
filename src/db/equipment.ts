@@ -8,11 +8,13 @@ import { nowISO, newId } from '@/services/ids';
 const SELECT_WITH_SUMMARY = `
   SELECT
     e.*,
+    s.name AS sector_name,
     (SELECT MAX(m.performed_at) FROM maintenance m
       WHERE m.equipment_id = e.id AND m.deleted_at IS NULL) AS last_maintenance,
     (SELECT COUNT(*) FROM maintenance m
       WHERE m.equipment_id = e.id AND m.deleted_at IS NULL) AS maintenance_count
   FROM equipment e
+  LEFT JOIN sectors s ON s.id = e.sector_id AND s.deleted_at IS NULL
 `;
 
 export async function listEquipment(db: SQLiteDatabase): Promise<EquipmentWithSummary[]> {
@@ -33,16 +35,17 @@ export async function findEquipment(
 
 export async function createEquipment(
   db: SQLiteDatabase,
-  { name, category, location, intervalDays }: EquipmentInput
+  { name, category, location, intervalDays, sectorId }: EquipmentInput
 ): Promise<string> {
   const id = newId();
   const now = nowISO();
 
   await db.runAsync(
     `INSERT INTO equipment
-       (id, name, category, location, interval_days, created_at, updated_at, deleted_at, synced)
-     VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 0)`,
-    [id, name, category || null, location || null, intervalDays, now, now]
+       (id, name, category, location, sector_id, interval_days,
+        created_at, updated_at, deleted_at, synced)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 0)`,
+    [id, name, category || null, location || null, sectorId, intervalDays, now, now]
   );
 
   return id;
@@ -53,14 +56,14 @@ export async function createEquipment(
 export async function updateEquipment(
   db: SQLiteDatabase,
   id: string,
-  { name, category, location, intervalDays }: EquipmentInput
+  { name, category, location, intervalDays, sectorId }: EquipmentInput
 ): Promise<void> {
   await db.runAsync(
     `UPDATE equipment
-        SET name = ?, category = ?, location = ?, interval_days = ?,
+        SET name = ?, category = ?, location = ?, sector_id = ?, interval_days = ?,
             updated_at = ?, synced = 0
       WHERE id = ?`,
-    [name, category || null, location || null, intervalDays, nowISO(), id]
+    [name, category || null, location || null, sectorId, intervalDays, nowISO(), id]
   );
 }
 
