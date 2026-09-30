@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import Button from '@/components/Button';
+import CategoryPicker from '@/components/CategoryPicker';
 import Field from '@/components/Field';
 import SectorPicker from '@/components/SectorPicker';
 import { createSector, listSectors } from '@/db/sectors';
@@ -101,12 +102,7 @@ export default function EquipmentForm({
           autoFocus={!initial}
         />
 
-        <Field
-          label={t.equipmentForm.category}
-          value={category}
-          onChangeText={setCategory}
-          placeholder={t.equipmentForm.categoryPlaceholder}
-        />
+        <CategoryPicker value={category} onChange={setCategory} />
 
         <SectorPicker
           sectors={sectors}

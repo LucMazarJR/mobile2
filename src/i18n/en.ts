@@ -68,6 +68,21 @@ export const en: Dictionary = {
     savedHereOnly: 'Saved here only',
   },
 
+  categories: {
+    none: 'No type',
+    other: 'Other',
+    otherPlaceholder: 'e.g. Compressor, Hoist, Projector',
+    hint: 'Pick a type, or tap Other to type your own.',
+    extinguisher: 'Fire extinguisher',
+    airConditioner: 'Air conditioner',
+    generator: 'Generator',
+    pump: 'Pump',
+    elevator: 'Elevator',
+    waterCooler: 'Water cooler',
+    electricalPanel: 'Electrical panel',
+    camera: 'Camera',
+  },
+
   equipmentForm: {
     intro: 'Saved right away, even with no internet. The cloud copy uploads on its own later.',
     name: 'Equipment name',

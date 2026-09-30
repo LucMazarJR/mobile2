@@ -75,6 +75,21 @@ export const ptBR = {
     savedHereOnly: 'Salvo só aqui',
   },
 
+  categories: {
+    none: 'Sem tipo',
+    other: 'Outro',
+    otherPlaceholder: 'Ex.: Compressor, Talha, Projetor',
+    hint: 'Escolha um tipo ou toque em Outro para digitar.',
+    extinguisher: 'Extintor',
+    airConditioner: 'Ar-condicionado',
+    generator: 'Gerador',
+    pump: 'Bomba',
+    elevator: 'Elevador',
+    waterCooler: 'Bebedouro',
+    electricalPanel: 'Painel elétrico',
+    camera: 'Câmera',
+  },
+
   equipmentForm: {
     intro: 'Salva na hora, mesmo sem internet. A cópia na nuvem sobe sozinha depois.',
     name: 'Nome do equipamento',
