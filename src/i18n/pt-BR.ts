@@ -82,6 +82,8 @@ export const ptBR = {
     hint: 'Escolha um tipo ou toque em Outro para digitar.',
     extinguisher: 'Extintor',
     airConditioner: 'Ar-condicionado',
+    computer: 'Computador',
+    projector: 'Projetor',
     generator: 'Gerador',
     pump: 'Bomba',
     elevator: 'Elevador',

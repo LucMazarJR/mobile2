@@ -75,6 +75,8 @@ export const en: Dictionary = {
     hint: 'Pick a type, or tap Other to type your own.',
     extinguisher: 'Fire extinguisher',
     airConditioner: 'Air conditioner',
+    computer: 'Computer',
+    projector: 'Projector',
     generator: 'Generator',
     pump: 'Pump',
     elevator: 'Elevator',

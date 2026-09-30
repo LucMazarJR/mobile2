@@ -18,7 +18,8 @@ const RULES: { match: string[]; icon: IconName }[] = [
   { match: ['bomba', 'pump', 'hidr'], icon: 'water-pump' },
   { match: ['elevador', 'elevator', 'lift'], icon: 'elevator-passenger' },
   { match: ['bebedouro', 'water cooler', 'purificador'], icon: 'water' },
-  { match: ['computador', 'notebook', 'laptop', 'pc'], icon: 'laptop' },
+  { match: ['computador', 'notebook', 'laptop', 'pc', 'desktop'], icon: 'laptop' },
+  { match: ['projetor', 'projector', 'datashow'], icon: 'projector' },
   { match: ['impressora', 'printer'], icon: 'printer' },
   { match: ['laborat', 'lab', 'microsc'], icon: 'flask-outline' },
   { match: ['camera', 'câmera', 'cftv'], icon: 'cctv' },
@@ -38,6 +39,8 @@ export function categoryIcon(category: string | null | undefined): IconName {
 export type CategoryPresetKey =
   | 'extinguisher'
   | 'airConditioner'
+  | 'computer'
+  | 'projector'
   | 'generator'
   | 'pump'
   | 'elevator'
@@ -51,6 +54,8 @@ export type CategoryPresetKey =
 export const CATEGORY_PRESETS: { key: CategoryPresetKey; icon: IconName }[] = [
   { key: 'extinguisher', icon: 'fire-extinguisher' },
   { key: 'airConditioner', icon: 'air-conditioner' },
+  { key: 'computer', icon: 'laptop' },
+  { key: 'projector', icon: 'projector' },
   { key: 'generator', icon: 'engine' },
   { key: 'pump', icon: 'water-pump' },
   { key: 'elevator', icon: 'elevator-passenger' },
