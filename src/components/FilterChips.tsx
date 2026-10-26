@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { radius, spacing, tabular, type, usePalette } from '@/theme';
 
@@ -11,27 +11,24 @@ type Props = {
   labels: Record<FilterKey, string>;
 };
 
-// Summary and filter in one row: the counts that justify the whole product are
-// on screen, and tapping one narrows the list. No hidden gestures.
+// Summary and filter in one panel: the big numbers that justify the whole
+// product are on screen, and tapping a cell narrows the list. The selected
+// cell inverts, like a pressed key.
 export default function FilterChips({ value, onChange, counts, labels }: Props) {
   const palette = usePalette();
   const keys: FilterKey[] = ['all', 'overdue', 'due-soon', 'on-track'];
 
   const accent: Record<FilterKey, string> = {
-    all: palette.brand,
+    all: palette.ink,
     overdue: palette.critical,
     'due-soon': palette.warning,
     'on-track': palette.ok,
   };
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}>
-      {keys.map((key) => {
+    <View style={[styles.panel, { borderColor: palette.ink, backgroundColor: palette.surface }]}>
+      {keys.map((key, index) => {
         const selected = value === key;
-        const color = accent[key];
 
         return (
           <Pressable
@@ -41,49 +38,47 @@ export default function FilterChips({ value, onChange, counts, labels }: Props) 
             accessibilityState={{ selected }}
             accessibilityLabel={`${labels[key]}, ${counts[key]}`}
             style={({ pressed }) => [
-              styles.chip,
-              {
-                backgroundColor: selected ? color : palette.surface,
-                borderColor: selected ? color : palette.line,
-              },
+              styles.cell,
+              index > 0 && { borderLeftWidth: 1, borderLeftColor: palette.line },
+              selected && { backgroundColor: palette.ink },
               pressed && styles.pressed,
             ]}>
             <Text
-              style={[type.supportStrong, { color: selected ? palette.onBrand : palette.inkMuted }]}>
+              style={[
+                type.figureSmall,
+                tabular,
+                { color: selected ? palette.surface : accent[key] },
+              ]}>
+              {counts[key]}
+            </Text>
+            <Text
+              numberOfLines={1}
+              style={[type.micro, { color: selected ? palette.surface : palette.inkMuted }]}>
               {labels[key]}
             </Text>
-            <View
-              style={[
-                styles.count,
-                { backgroundColor: selected ? 'rgba(255,255,255,0.22)' : palette.surfaceAlt },
-              ]}>
-              <Text
-                style={[
-                  type.micro,
-                  tabular,
-                  { color: selected ? palette.onBrand : palette.inkMuted },
-                ]}>
-                {counts[key]}
-              </Text>
-            </View>
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { gap: spacing.sm, paddingBottom: spacing.md },
-  chip: {
+  panel: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 44,
+    borderWidth: 1.5,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+  },
+  cell: {
+    flex: 1,
+    minHeight: 64,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: 2,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
+    paddingVertical: spacing.sm,
   },
   pressed: { opacity: 0.75 },
-  count: { minWidth: 22, paddingHorizontal: 5, paddingVertical: 2, borderRadius: radius.pill, alignItems: 'center' },
 });

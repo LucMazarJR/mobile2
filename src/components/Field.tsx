@@ -31,13 +31,13 @@ export default function Field({
   const palette = usePalette();
   const [focused, setFocused] = useState(false);
 
-  const borderColor = error ? palette.critical : focused ? palette.brand : palette.line;
+  const borderColor = error ? palette.critical : focused ? palette.ink : palette.line;
 
   return (
     <View style={[styles.container, containerStyle]}>
       <View style={styles.labelRow}>
-        <Text style={[type.supportStrong, { color: palette.ink }]}>{label}</Text>
-        {required ? <View style={[styles.dot, { backgroundColor: palette.brand }]} /> : null}
+        <Text style={[type.section, { color: palette.inkMuted }]}>{label}</Text>
+        {required ? <View style={[styles.dot, { backgroundColor: palette.signal }]} /> : null}
       </View>
 
       <TextInput
@@ -46,17 +46,18 @@ export default function Field({
         onBlur={() => setFocused(false)}
         accessibilityLabel={label}
         accessibilityHint={error ?? hint}
+        selectionColor={palette.ink}
         style={[
           type.body,
           styles.input,
           {
             backgroundColor: palette.surface,
             borderColor,
-            borderWidth: focused || error ? 2 : 1,
+            // The thick border only paints on the bottom edge when focused, like a
+            // ruled line on a form, and padding compensates so nothing shifts.
+            borderBottomWidth: focused || error ? 3 : 1,
+            paddingBottom: focused || error ? spacing.md - 2 : spacing.md,
             color: palette.ink,
-            // Keeps the box from shifting when the border thickens on focus.
-            paddingHorizontal: focused || error ? spacing.md - 1 : spacing.md,
-            paddingVertical: focused || error ? spacing.md - 1 : spacing.md,
           },
           props.multiline && styles.multiline,
         ]}
@@ -79,9 +80,14 @@ export default function Field({
 
 const styles = StyleSheet.create({
   container: { marginBottom: spacing.lg },
-  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.sm },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  input: { borderRadius: radius.md },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.xs + 2 },
+  dot: { width: 7, height: 7 },
+  input: {
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+  },
   multiline: { minHeight: 100, textAlignVertical: 'top' },
   messageRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: spacing.xs },
 });
