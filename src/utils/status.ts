@@ -65,6 +65,15 @@ export function statusChipLabel(status: Status, t: Dictionary): string {
   }
 }
 
+/** The big number on a list row: days late or days left, with its caption. */
+export function statusFigure(status: Status, t: Dictionary): { value: string; caption: string } {
+  if (status.key === 'overdue') {
+    return { value: String(Math.abs(status.daysLeft)), caption: t.status.figureLate };
+  }
+  if (status.daysLeft === 0) return { value: '0', caption: t.status.figureToday };
+  return { value: String(status.daysLeft), caption: t.status.figureLeft };
+}
+
 /** Spelled-out sentence, used in the card footer and for screen readers. */
 export function statusFullLabel(status: Status, t: Dictionary): string {
   switch (status.key) {

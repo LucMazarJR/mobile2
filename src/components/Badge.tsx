@@ -11,11 +11,10 @@ type BadgeProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-// Fully rounded on purpose: it reads as an inspection sticker rather than a
-// generic box.
+// A stamp: square corners, hairline in the status colour, mono capitals.
 export default function Badge({ label, color, background, icon, style }: BadgeProps) {
   return (
-    <View style={[styles.badge, { backgroundColor: background }, style]}>
+    <View style={[styles.badge, { backgroundColor: background, borderColor: color }, style]}>
       {icon ? <MaterialCommunityIcons name={icon} size={12} color={color} /> : null}
       <Text style={[type.micro, tabular, { color }]}>{label}</Text>
     </View>
@@ -26,9 +25,11 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 4,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    borderWidth: 1,
   },
 });

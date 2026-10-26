@@ -37,7 +37,13 @@ type BackupValue = {
   revision: number;
 };
 
-const EMPTY: PendingCounts = { sectors: 0, equipment: 0, maintenance: 0 };
+const EMPTY: PendingCounts = {
+  sectors: 0,
+  equipment: 0,
+  scans: 0,
+  nameplate_readings: 0,
+  maintenance: 0,
+};
 
 const BackupContext = createContext<BackupValue | null>(null);
 

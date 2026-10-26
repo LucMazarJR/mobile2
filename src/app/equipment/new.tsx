@@ -4,6 +4,7 @@ import { Alert } from 'react-native';
 
 import EquipmentForm from '@/components/EquipmentForm';
 import { createEquipment } from '@/db/equipment';
+import { saveReading } from '@/db/nameplates';
 import type { EquipmentInput } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
@@ -18,7 +19,14 @@ export default function NewEquipment() {
     try {
       // Saved locally first. That is what makes this work with no signal. The
       // upload right after is only an opportunistic attempt.
-      await createEquipment(db, values);
+      const id = await createEquipment(db, values);
+      if (values.nameplateText) {
+        await saveReading(db, id, values.nameplateText, {
+          manufacturer: values.manufacturer,
+          model: values.model,
+          serialNumber: values.serialNumber,
+        });
+      }
       void uploadNow();
       router.back();
     } catch (error) {

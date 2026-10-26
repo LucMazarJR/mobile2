@@ -1,8 +1,14 @@
-# Controle de Manutenção
+# Stamp
 
 Aplicativo mobile (React Native + Expo) para acompanhar a manutenção de
 equipamentos: extintores, ar-condicionados, geradores, máquinas de laboratório
-e afins.
+e afins. Cada equipamento tem uma **etiqueta com QR Code** que prova que o
+técnico esteve diante dele, e a **plaqueta de identificação** pode ser lida pela
+câmera para preencher o cadastro.
+
+O nome vem do carimbo de inspeção: cada visita ao equipamento é carimbada pelo
+app, com data, hora e a prova de que o técnico esteve lá. A marca desenha a
+plaqueta metálica presa ao equipamento, que é o que o app lê.
 
 Interface em **português e inglês**; o código, os arquivos e o banco de dados
 estão em inglês.
@@ -29,6 +35,8 @@ de percorrer uma lista única.
 | App | React Native + Expo (Expo Router) |
 | Banco local | Expo SQLite |
 | Banco online | Supabase (PostgreSQL) |
+| Visão computacional | QR Code (`expo-camera`) e OCR (Google ML Kit, `@zhanziyang/expo-text-extractor`) |
+| Etiquetas | `qrcode` (matriz do QR) + `expo-print` / `expo-sharing` (PDF) |
 | Linguagem | TypeScript |
 
 ## Como rodar
@@ -153,6 +161,86 @@ Ao terminar, o comando mostra um link de download. Ele também fica em
 quem for testar. No celular, o Android vai pedir para autorizar a instalação de
 fontes desconhecidas.
 
+## Visão computacional (2º bimestre)
+
+Duas funcionalidades, as duas ligadas ao problema real: saber **quem esteve
+diante de qual equipamento e quando**, e não perder tempo digitando dados de
+plaquetas em lugares ruins.
+
+### 1. QR Code: a visita como prova de presença
+
+1. O equipamento recebe uma etiqueta impressa (ficha do equipamento, botão
+   **Imprimir etiqueta**, ou em **Setores** para imprimir as etiquetas de todo o
+   setor de uma vez, em PDF).
+2. O técnico abre a aba **Escanear** e aponta a câmera para o QR.
+3. O app abre a ficha e grava uma **visita** (`scans`) com data e hora.
+4. A manutenção registrada a partir dessa visita guarda `scan_id` e aparece no
+   histórico com o selo **Verificada no local**.
+
+O QR contém um link, `stamp://visit/<id>`. Lido pelo app, abre a ficha e
+registra a visita. Lido pela câmera comum do celular, abre o app pelo mesmo
+endereço. Etiquetas impressas na fase em que o app se chamava Plaqueta continuam valendo
+dentro do app, porque o scanner reconhece o identificador em qualquer endereço;
+só a abertura pela câmera comum do celular depende do endereço novo. Toda leitura
+passa pela rota [`src/app/visit/[id].tsx`](src/app/visit/%5Bid%5D.tsx),
+o único lugar que grava visitas, então não existe segundo caminho que possa
+esquecer de gravar.
+
+Se o equipamento foi cadastrado em outro celular e ainda não chegou neste, o app
+busca na nuvem antes de dizer que não achou. Se a etiqueta estiver rasgada, dá
+para digitar o código de 8 caracteres impresso embaixo do QR.
+
+### 2. OCR: cadastro pela plaqueta
+
+No cadastro e na edição, **Ler plaqueta com a câmera** fotografa a plaqueta do
+equipamento. O texto é reconhecido no próprio aparelho (Google ML Kit, funciona
+sem internet), e [`src/utils/nameplate.ts`](src/utils/nameplate.ts) separa
+fabricante, modelo e número de série a partir dos rótulos comuns (`MODELO`,
+`MOD`, `S/N`, `Nº SÉRIE`, `FABRICANTE`, marcas conhecidas, valor na linha de
+baixo, vários rótulos na mesma linha).
+
+O resultado nunca vai direto para o banco: aparece para conferência, e cada linha
+lida pode ser mandada para um campo com um toque. Ao salvar, o texto bruto fica
+guardado em `nameplate_readings` como evidência, e aparece na ficha em **Leitura
+da plaqueta**.
+
+> **OCR exige o app instalado (APK ou development build).** O leitor é código
+> nativo e não existe no Expo Go. No Expo Go o botão abre uma tela explicando
+> isso, e o QR Code continua funcionando normalmente. O plugin
+> [`plugins/withOcrModel.js`](plugins/withOcrModel.js) pede ao Google Play Services
+> que baixe o modelo de OCR junto com a instalação do APK; sem isso a primeira
+> leitura precisaria de internet.
+
+### Onde os resultados ficam
+
+| Resultado | SQLite (local) | Supabase (nuvem) |
+| --- | --- | --- |
+| Visita (leitura de QR) | `scans` | `scans` |
+| Leitura da plaqueta | `nameplate_readings` e colunas `manufacturer`, `model`, `serial_number` em `equipment` | idem |
+| Manutenção verificada no local | `maintenance.scan_id` | `maintenance.scan_id` |
+
+Tudo entra na mesma fila de envio das demais tabelas (`synced = 0` e envio
+automático). A migração local é a **v6** em [`src/db/schema.ts`](src/db/schema.ts).
+
+> **Antes de testar a nuvem:** rode o [`supabase/schema.sql`](supabase/schema.sql)
+> de novo no SQL Editor. Ele é seguro de repetir e só acrescenta as tabelas e
+> colunas novas.
+
+Em **Ajustes > Detalhes técnicos** dá para ver, ao vivo, quantas linhas cada
+tabela tem no celular, quantas estão na fila de envio, a última leitura de QR e o
+texto da última leitura de plaqueta. É o painel indicado para mostrar o SQLite
+na apresentação.
+
+## Identidade visual
+
+"Ficha técnica industrial": papel quente, tinta preta como cor da marca, amarelo
+de sinalização só para a ação principal (escanear) e para o foco, cantos quase
+retos e tipografia condensada (Barlow Condensed nos títulos e números, IBM Plex
+Sans no texto, IBM Plex Mono em códigos, datas e contadores). Vermelho, âmbar e
+verde são reservados ao status do equipamento e nunca aparecem como decoração.
+O ícone, o splash e a marca dentro do app saem do mesmo desenho
+([`assets/brand`](assets/brand)): uma plaqueta com dois rebites e o canto de um QR.
+
 ## Como a cópia na nuvem funciona
 
 Toda gravação acontece primeiro no SQLite, com a coluna `synced = 0`. Um serviço
@@ -173,22 +261,27 @@ que foi editado aqui sobrevive, e o que foi apagado aqui não ressuscita.
 ```
 src/
   app/                       telas (rotas do Expo Router)
-    index.tsx                lista de equipamentos
-    sectors.tsx              criação e gestão dos setores
-    about.tsx                como os dados são guardados + detalhes técnicos
+    (tabs)/                  abas: equipamentos, escanear, setores, ajustes
+    visit/[id].tsx           registra a visita de um QR e abre a ficha
     equipment/
       new.tsx                cadastro
+      ocr.tsx                leitura da plaqueta pela câmera
       [id]/
-        index.tsx            ficha + histórico
+        index.tsx            ficha, QR, histórico e visitas
         edit.tsx             edição
         maintenance.tsx      registrar/editar manutenção
   components/                componentes de interface reutilizáveis
   db/                        schema, migrações e acesso aos dados
   i18n/                      textos em pt-BR e en
-  services/                  cliente Supabase, cópia na nuvem, ids
-  utils/                     status, categorias e formatação
+  services/                  nuvem, ids, QR, OCR e etiquetas em PDF
+  utils/                     status, categorias, leitura de plaquetas
+plugins/
+  withOcrModel.js            pede o modelo de OCR na instalação do APK
+assets/brand/                desenho da marca (SVG) que gera ícone e splash
 supabase/
   schema.sql                 estrutura equivalente no PostgreSQL
+docs/
+  apresentacao.md            roteiro e checklist da apresentação
 ```
 
 ## Convenções
@@ -204,15 +297,3 @@ supabase/
 - **Migrações são um histórico, não uma foto.** `src/db/schema.ts` roda por
   `PRAGMA user_version`; passos antigos não são reescritos, porque já rodaram em
   aparelhos reais.
-
-## Próxima etapa (2º bimestre)
-
-Leitura de **QR Code** com a câmera: cada equipamento recebe uma etiqueta
-impressa com o próprio identificador, o mesmo "código da etiqueta" que já
-aparece na ficha hoje. O técnico escaneia, o app abre a ficha direto e registra a
-leitura numa terceira tabela, que sobe para a nuvem pelo mesmo mecanismo já
-existente.
-
-O identificador é gerado no aparelho, e não pelo banco, justamente por causa
-disso: o QR precisa poder ser impresso mesmo que o cadastro tenha sido feito
-offline.

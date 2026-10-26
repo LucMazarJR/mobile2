@@ -1,19 +1,17 @@
 {
   "expo": {
-    "name": "Controle de Manutenção",
+    "name": "Stamp",
     "slug": "luciano",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "controlemanutencao",
+    "scheme": "stamp",
     "userInterfaceStyle": "automatic",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
+    "ios": {},
     "android": {
       "package": "com.controlemanutencao.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E2F1F2",
+        "backgroundColor": "#161616",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -29,14 +27,29 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0E5B63",
+          "backgroundColor": "#161616",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 220,
+          "dark": {
+            "backgroundColor": "#161616",
+            "image": "./assets/images/splash-icon.png"
+          }
         }
       ],
+      "./plugins/withOcrModel",
       "expo-sqlite",
       "expo-localization",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-sharing",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O Stamp usa a câmera para ler as etiquetas QR e as plaquetas dos equipamentos.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

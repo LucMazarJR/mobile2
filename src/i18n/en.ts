@@ -13,6 +13,17 @@ export const en: Dictionary = {
     none: '-',
   },
 
+  brand: {
+    name: 'Stamp',
+    tagline: 'Every visit, stamped',
+  },
+
+  tabs: {
+    equipment: 'Equipment',
+    scan: 'Scan',
+    settings: 'Settings',
+  },
+
   nav: {
     home: 'Equipment',
     newEquipment: 'New equipment',
@@ -21,6 +32,53 @@ export const en: Dictionary = {
     newMaintenance: 'New service',
     editMaintenance: 'Edit service',
     about: 'About this app',
+  },
+
+  scan: {
+    title: 'Scan a tag',
+    hint: 'Point at the QR on the equipment tag',
+    permissionTitle: 'The camera reads the tag',
+    permissionBody:
+      'Stamp uses the camera to read equipment QR codes and identification plates. Images are not kept.',
+    allowCamera: 'Allow camera',
+    openSettings: 'Open settings',
+    torch: 'Flashlight',
+    typeCode: 'Type code',
+    codeLabel: 'Tag code',
+    codePlaceholder: 'e.g. 6F1C2D3E',
+    codeGo: 'Open',
+    codeNotFound: 'No equipment with that code.',
+    notRecognizedTitle: 'Tag not recognised',
+    notRecognizedBody: 'That QR does not belong to a Stamp equipment item.',
+    tryAgain: 'Scan again',
+    unknownTitle: 'Equipment not found',
+    unknownBody:
+      'That tag points to equipment that is neither on this device nor in the cloud copy.',
+    back: 'Back to the scanner',
+    recording: 'Recording visit',
+  },
+
+  ocr: {
+    title: 'Read nameplate',
+    hint: 'Frame the identification plate on the equipment',
+    capture: 'Take photo',
+    reading: 'Reading the plate',
+    unavailableTitle: 'Plate reading is not available here',
+    unavailableBody:
+      'It works in the installed app (APK), not in Expo Go. You can still type the details in.',
+    nothingTitle: 'Could not read any text',
+    nothingBody: 'Move closer, improve the light and avoid glare on the plate.',
+    reviewTitle: 'Check the details',
+    reviewHint: 'Tap a line of the text read to send it to a field.',
+    readText: 'Text read',
+    putIn: 'Put in',
+    useData: 'Use these details',
+    retake: 'Take another photo',
+    failedTitle: 'Could not read the photo',
+    failedBody: 'Try again. If it keeps happening, close and reopen the app.',
+    formButton: 'Read nameplate with the camera',
+    formHint: 'Point the camera at the plate and the app fills in manufacturer, model and serial.',
+    formFilled: 'Details read from the plate. Check them before saving.',
   },
 
   home: {
@@ -38,6 +96,9 @@ export const en: Dictionary = {
   },
 
   sectors: {
+    printLabels: 'Print sector tags',
+    printEmpty: 'This sector has no equipment yet.',
+    clearFilter: 'Show all sectors',
     title: 'Sectors',
     subtitle: 'Group equipment by the part of the building it belongs to.',
     manage: 'Sectors',
@@ -80,11 +141,32 @@ export const en: Dictionary = {
     interval: 'Service every how many days',
     intervalHint: 'This is how the app knows when a service is coming up.',
     intervalError: 'Enter a number of days, for example 30.',
+    manufacturer: 'Manufacturer',
+    manufacturerPlaceholder: 'e.g. Kidde, Honeywell, Carrier',
+    model: 'Model',
+    modelPlaceholder: 'e.g. ABC 6 kg',
+    serialNumber: 'Serial number',
+    serialNumberPlaceholder: 'e.g. 2231045',
     saveNew: 'Save equipment',
     saveEdit: 'Save changes',
   },
 
   detail: {
+    plateReading: 'Nameplate reading',
+    tagTitle: 'Tag',
+    tagBody: 'Print it and stick it on the equipment. Scanning it records the visit.',
+    printTag: 'Print tag',
+    visits: 'Visits',
+    visitsEmptyTitle: 'No visits yet',
+    visitsEmptyBody: 'Scan the tag when you are standing in front of the equipment.',
+    visitBanner: (time: string) => `Visit recorded at ${time}`,
+    visitBannerBody: 'Any service you log now is marked as verified on site.',
+    manufacturer: 'Manufacturer',
+    model: 'Model',
+    serialNumber: 'Serial no.',
+    identity: 'Identification',
+    lastVisit: 'Last visit',
+    totalVisits: 'Visits',
     category: 'Type',
     location: 'Where it is',
     interval: 'Service',
@@ -106,6 +188,8 @@ export const en: Dictionary = {
   },
 
   maintenance: {
+    verifiedNote: 'This service will be marked as verified on site.',
+    verified: 'Verified on site',
     preventive: 'Preventive',
     preventiveHint: 'Routine service',
     corrective: 'Corrective',
@@ -137,22 +221,16 @@ export const en: Dictionary = {
     dueSoonFull: (days: number) => `Due in ${days} ${days === 1 ? 'day' : 'days'}`,
     onTrackChip: 'On track',
     onTrackFull: (days: number) => `Next service in ${days} days`,
+    figureLate: 'days overdue',
+    figureLeft: 'days left',
+    figureToday: 'due today',
   },
 
   backup: {
     allSaved: 'Everything copied to the cloud',
     allSavedAt: (time: string) => `Last copy at ${time}`,
     sending: 'Uploading copy...',
-    pendingTitle: (equipment: number, maintenance: number) => {
-      const parts: string[] = [];
-      if (equipment > 0) {
-        parts.push(`${equipment} ${equipment === 1 ? 'equipment item' : 'equipment items'}`);
-      }
-      if (maintenance > 0) {
-        parts.push(`${maintenance} ${maintenance === 1 ? 'service' : 'services'}`);
-      }
-      return `${parts.join(' and ')} not copied yet`;
-    },
+    pendingTitle: (count: number) => `${count} ${count === 1 ? 'item' : 'items'} not copied yet`,
     sendNow: 'Upload now',
     offlineTitle: 'No internet right now',
     offlineBody: 'The copy uploads on its own once you reconnect.',
@@ -184,10 +262,22 @@ export const en: Dictionary = {
     techVersion: 'Version',
     techPending: 'Waiting to upload',
     techLastError: 'Last error',
+    techRows: 'local',
+    techPendingShort: 'queued',
+    techLastScan: 'Last QR scan',
+    techLastOcr: 'Last plate reading',
     techNoError: 'none',
   },
 
+  labels: {
+    pageTitle: 'Stamp tags',
+    scanToOpen: 'Scan to record the visit',
+    noSector: 'No sector',
+  },
+
   errors: {
+    printTitle: 'Could not create the tag',
+    printBody: 'Try again. If it keeps happening, close and reopen the app.',
     saveTitle: 'Could not save',
     saveBody: 'Try again. If it keeps happening, close and reopen the app.',
     deleteTitle: 'Could not delete',

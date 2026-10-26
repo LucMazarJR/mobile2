@@ -12,16 +12,17 @@ type Props = {
   onAction?: () => void;
 };
 
+// Left aligned and bare: an empty list should read like a blank line on a form,
+// not like a centred illustration.
 export default function EmptyState({ icon, title, body, actionLabel, onAction }: Props) {
   const palette = usePalette();
 
   return (
     <View style={styles.container}>
-      <View style={[styles.circle, { backgroundColor: palette.surfaceAlt }]}>
-        <MaterialCommunityIcons name={icon} size={30} color={palette.inkFaint} />
-      </View>
-      <Text style={[type.cardTitle, styles.title, { color: palette.ink }]}>{title}</Text>
-      <Text style={[type.support, styles.body, { color: palette.inkMuted }]}>{body}</Text>
+      <MaterialCommunityIcons name={icon} size={44} color={palette.ink} />
+      <View style={[styles.rule, { backgroundColor: palette.ink }]} />
+      <Text style={[type.title, { color: palette.ink }]}>{title}</Text>
+      <Text style={[type.body, styles.body, { color: palette.inkMuted }]}>{body}</Text>
       {actionLabel && onAction ? (
         <Button label={actionLabel} onPress={onAction} style={styles.action} />
       ) : null}
@@ -30,16 +31,8 @@ export default function EmptyState({ icon, title, body, actionLabel, onAction }:
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.lg },
-  circle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-  },
-  title: { textAlign: 'center', marginBottom: spacing.sm },
-  body: { textAlign: 'center', maxWidth: 320 },
-  action: { marginTop: spacing.xl, alignSelf: 'stretch', maxWidth: 320 },
+  container: { paddingVertical: spacing.xxl, paddingHorizontal: spacing.xs },
+  rule: { height: 3, width: 40, marginTop: spacing.lg, marginBottom: spacing.md },
+  body: { marginTop: spacing.sm, maxWidth: 340 },
+  action: { marginTop: spacing.xl, alignSelf: 'flex-start', minWidth: 240 },
 });
