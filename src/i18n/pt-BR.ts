@@ -18,6 +18,17 @@ export const ptBR = {
     none: '-',
   },
 
+  brand: {
+    name: 'Plaqueta',
+    tagline: 'Manutenção com etiqueta e prova',
+  },
+
+  tabs: {
+    equipment: 'Equipamentos',
+    scan: 'Escanear',
+    settings: 'Ajustes',
+  },
+
   nav: {
     home: 'Equipamentos',
     newEquipment: 'Novo equipamento',
@@ -26,6 +37,30 @@ export const ptBR = {
     newMaintenance: 'Nova manutenção',
     editMaintenance: 'Editar manutenção',
     about: 'Sobre o app',
+  },
+
+  scan: {
+    title: 'Escanear etiqueta',
+    hint: 'Aponte para o QR da etiqueta do equipamento',
+    permissionTitle: 'A câmera lê a etiqueta',
+    permissionBody:
+      'A Plaqueta usa a câmera para ler o QR dos equipamentos e a plaqueta de identificação. As imagens não ficam guardadas.',
+    allowCamera: 'Permitir câmera',
+    openSettings: 'Abrir ajustes',
+    torch: 'Lanterna',
+    typeCode: 'Digitar código',
+    codeLabel: 'Código da etiqueta',
+    codePlaceholder: 'Ex.: 6F1C2D3E',
+    codeGo: 'Abrir',
+    codeNotFound: 'Nenhum equipamento com esse código.',
+    notRecognizedTitle: 'Etiqueta não reconhecida',
+    notRecognizedBody: 'Esse QR não é de um equipamento da Plaqueta.',
+    tryAgain: 'Escanear de novo',
+    unknownTitle: 'Equipamento não encontrado',
+    unknownBody:
+      'Essa etiqueta aponta para um equipamento que não está neste aparelho nem na cópia da nuvem.',
+    back: 'Voltar ao scanner',
+    recording: 'Registrando visita',
   },
 
   home: {
@@ -44,6 +79,9 @@ export const ptBR = {
   },
 
   sectors: {
+    printLabels: 'Imprimir etiquetas do setor',
+    printEmpty: 'Este setor ainda não tem equipamentos.',
+    clearFilter: 'Mostrar todos os setores',
     title: 'Setores',
     subtitle: 'Agrupe os equipamentos pela parte do prédio a que pertencem.',
     manage: 'Setores',
@@ -98,6 +136,20 @@ export const ptBR = {
   },
 
   detail: {
+    tagTitle: 'Etiqueta',
+    tagBody: 'Imprima e cole no equipamento. Ao escanear, o app registra a visita.',
+    printTag: 'Imprimir etiqueta',
+    visits: 'Visitas',
+    visitsEmptyTitle: 'Nenhuma visita ainda',
+    visitsEmptyBody: 'Escaneie a etiqueta quando estiver diante do equipamento.',
+    visitBanner: (time: string) => `Visita registrada às ${time}`,
+    visitBannerBody: 'A manutenção que você registrar agora fica marcada como verificada no local.',
+    manufacturer: 'Fabricante',
+    model: 'Modelo',
+    serialNumber: 'Nº de série',
+    identity: 'Identificação',
+    lastVisit: 'Última visita',
+    totalVisits: 'Visitas',
     category: 'Tipo',
     location: 'Onde fica',
     interval: 'Revisão',
@@ -120,6 +172,8 @@ export const ptBR = {
   },
 
   maintenance: {
+    verifiedNote: 'Esta manutenção será marcada como verificada no local.',
+    verified: 'Verificada no local',
     preventive: 'Preventiva',
     preventiveHint: 'Revisão de rotina',
     corrective: 'Corretiva',
@@ -151,22 +205,16 @@ export const ptBR = {
     dueSoonFull: (days: number) => `Vence em ${days} ${days === 1 ? 'dia' : 'dias'}`,
     onTrackChip: 'Em dia',
     onTrackFull: (days: number) => `Próxima revisão em ${days} dias`,
+    figureLate: 'dias de atraso',
+    figureLeft: 'dias restantes',
+    figureToday: 'vence hoje',
   },
 
   backup: {
     allSaved: 'Tudo com cópia na nuvem',
     allSavedAt: (time: string) => `Última cópia às ${time}`,
     sending: 'Enviando cópia...',
-    pendingTitle: (equipment: number, maintenance: number) => {
-      const parts: string[] = [];
-      if (equipment > 0) {
-        parts.push(`${equipment} ${equipment === 1 ? 'equipamento' : 'equipamentos'}`);
-      }
-      if (maintenance > 0) {
-        parts.push(`${maintenance} ${maintenance === 1 ? 'manutenção' : 'manutenções'}`);
-      }
-      return `${parts.join(' e ')} sem cópia`;
-    },
+    pendingTitle: (count: number) => `${count} ${count === 1 ? 'item' : 'itens'} sem cópia`,
     sendNow: 'Enviar agora',
     offlineTitle: 'Sem internet agora',
     offlineBody: 'A cópia sobe sozinha quando conectar.',
@@ -201,7 +249,15 @@ export const ptBR = {
     techNoError: 'nenhum',
   },
 
+  labels: {
+    pageTitle: 'Etiquetas Plaqueta',
+    scanToOpen: 'Escaneie para registrar a visita',
+    noSector: 'Sem setor',
+  },
+
   errors: {
+    printTitle: 'Não deu para gerar a etiqueta',
+    printBody: 'Tente de novo. Se continuar, feche e abra o app.',
     saveTitle: 'Não deu para salvar',
     saveBody: 'Tente de novo. Se continuar, feche e abra o app.',
     deleteTitle: 'Não deu para apagar',

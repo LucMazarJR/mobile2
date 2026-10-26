@@ -5,23 +5,33 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import Badge from '@/components/Badge';
 import Button from '@/components/Button';
 import EmptyState from '@/components/EmptyState';
 import MaintenanceItem from '@/components/MaintenanceItem';
+import QrCode from '@/components/QrCode';
 import SectionTitle from '@/components/SectionTitle';
 import { deleteEquipment, findEquipment } from '@/db/equipment';
 import { listMaintenance } from '@/db/maintenance';
-import type { EquipmentWithSummary, Maintenance } from '@/db/types';
+import { findScan, listScans } from '@/db/scans';
+import type { EquipmentWithSummary, Maintenance, Scan } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
 import { tagCode } from '@/services/ids';
+import { shareLabels } from '@/services/labels';
+import { visitLink } from '@/services/qr';
 import { radius, spacing, tabular, type, usePalette } from '@/theme';
 import { categoryIcon } from '@/utils/categories';
-import { computeStatus, formatDate, statusChipLabel, statusColors, statusFullLabel } from '@/utils/status';
+import {
+  computeStatus,
+  formatDate,
+  formatTime,
+  statusColors,
+  statusFigure,
+  statusFullLabel,
+} from '@/utils/status';
 
 export default function EquipmentDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, scanId } = useLocalSearchParams<{ id: string; scanId?: string }>();
   const db = useSQLiteContext();
   const router = useRouter();
   const palette = usePalette();
@@ -31,16 +41,21 @@ export default function EquipmentDetail() {
 
   const [equipment, setEquipment] = useState<EquipmentWithSummary | null>(null);
   const [history, setHistory] = useState<Maintenance[]>([]);
+  const [visits, setVisits] = useState<Scan[]>([]);
+  const [currentVisit, setCurrentVisit] = useState<Scan | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   const load = useCallback(async () => {
     const found = await findEquipment(db, id);
     setEquipment(found);
     setHistory(found ? await listMaintenance(db, id) : []);
+    setVisits(found ? await listScans(db, id) : []);
+    setCurrentVisit(scanId ? await findScan(db, scanId) : null);
     setLoaded(true);
     await refreshPending();
-  }, [db, id, refreshPending]);
+  }, [db, id, scanId, refreshPending]);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,6 +94,19 @@ export default function EquipmentDetail() {
     ]);
   }
 
+  async function printTag() {
+    if (!equipment || printing) return;
+    setPrinting(true);
+    try {
+      await shareLabels([equipment], t.labels);
+    } catch (error) {
+      console.error('[labels] could not create the tag', error);
+      Alert.alert(t.errors.printTitle, t.errors.printBody);
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   if (!loaded) return <View style={{ flex: 1, backgroundColor: palette.surfaceSunken }} />;
 
   if (!equipment) {
@@ -95,19 +123,21 @@ export default function EquipmentDetail() {
 
   const status = computeStatus(equipment);
   const colors = statusColors(status, palette);
+  const figure = statusFigure(status, t);
+  const logParams = scanId ? { id, scanId } : { id };
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.surfaceSunken }]}>
       <Stack.Screen
         options={{
-          title: equipment.name,
+          title: t.nav.equipment.toLocaleUpperCase(),
           headerRight: () => (
             <Pressable
               onPress={() => router.push({ pathname: '/equipment/[id]/edit', params: { id } })}
               accessibilityRole="button"
               accessibilityLabel={t.common.edit}
               hitSlop={12}>
-              <MaterialCommunityIcons name="pencil" size={20} color={palette.brand} />
+              <MaterialCommunityIcons name="pencil" size={22} color={palette.ink} />
             </Pressable>
           ),
         }}
@@ -119,47 +149,97 @@ export default function EquipmentDetail() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
         ListHeaderComponent={
           <View>
-            <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.line }]}>
-              <View style={styles.cardHeader}>
-                <MaterialCommunityIcons
-                  name={categoryIcon(equipment.category)}
-                  size={26}
-                  color={palette.inkMuted}
-                />
-                <Badge
-                  label={statusChipLabel(status, t)}
-                  color={colors.fg}
-                  background={colors.bg}
-                />
+            {currentVisit ? (
+              <View
+                style={[styles.visit, { backgroundColor: palette.okWash, borderColor: palette.ok }]}>
+                <MaterialCommunityIcons name="qrcode-scan" size={22} color={palette.ok} />
+                <View style={styles.visitText}>
+                  <Text style={[type.bodyStrong, { color: palette.ok }]}>
+                    {t.detail.visitBanner(formatTime(new Date(currentVisit.scanned_at), locale))}
+                  </Text>
+                  <Text style={[type.support, { color: palette.ok }]}>
+                    {t.detail.visitBannerBody}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
+            <View style={[styles.plate, { backgroundColor: palette.surface, borderColor: palette.ink }]}>
+              <View style={[styles.plateBar, { backgroundColor: colors.fg }]}>
+                <Text style={[type.section, { color: '#FFFFFF' }]}>
+                  {statusFullLabel(status, t)}
+                </Text>
               </View>
 
-              <Text style={[type.title, styles.statusLine, { color: colors.fg }]}>
-                {statusFullLabel(status, t)}
-              </Text>
+              <View style={styles.plateTop}>
+                <View style={styles.plateTitle}>
+                  <View style={styles.categoryRow}>
+                    <MaterialCommunityIcons
+                      name={categoryIcon(equipment.category)}
+                      size={16}
+                      color={palette.inkMuted}
+                    />
+                    <Text style={[type.micro, { color: palette.inkMuted }]} numberOfLines={1}>
+                      {equipment.category || t.common.none}
+                    </Text>
+                  </View>
+                  <Text style={[type.display, { color: palette.ink }]}>{equipment.name}</Text>
+                  <Text style={[type.monoStrong, { color: palette.ink }]}>
+                    {tagCode(equipment.id)}
+                  </Text>
+                </View>
 
-              <View style={[styles.divider, { backgroundColor: palette.line }]} />
+                <View style={[styles.qr, { borderColor: palette.ink }]}>
+                  <QrCode value={visitLink(equipment.id)} size={96} />
+                </View>
+              </View>
 
-              <Row label={t.detail.category} value={equipment.category || t.common.none} />
-              <Row label={t.sectors.pickerLabel} value={equipment.sector_name || t.sectors.none} />
-              <Row label={t.detail.location} value={equipment.location || t.common.none} />
-              <Row
-                label={t.detail.interval}
-                value={t.detail.everyNDays(equipment.interval_days)}
-              />
-              <Row
-                label={t.detail.lastMaintenance}
-                value={formatDate(equipment.last_maintenance, locale)}
-              />
-              <Row label={t.detail.nextMaintenance} value={formatDate(status.next, locale)} />
-              <Row label={t.detail.totalDone} value={String(equipment.maintenance_count)} />
-              <Row label={t.detail.tagCode} value={tagCode(equipment.id)} mono />
+              <View style={[styles.figureRow, { borderColor: palette.line }]}>
+                <Text style={[type.hero, tabular, { color: colors.fg }]}>{figure.value}</Text>
+                <Text style={[type.section, { color: colors.fg }]}>{figure.caption}</Text>
+              </View>
+
+              <View style={styles.grid}>
+                <Cell label={t.sectors.pickerLabel} value={equipment.sector_name || t.sectors.none} />
+                <Cell label={t.detail.location} value={equipment.location || t.common.none} />
+                <Cell label={t.detail.manufacturer} value={equipment.manufacturer || t.common.none} />
+                <Cell label={t.detail.model} value={equipment.model || t.common.none} />
+                <Cell label={t.detail.serialNumber} value={equipment.serial_number || t.common.none} mono />
+                <Cell label={t.detail.interval} value={t.detail.everyNDays(equipment.interval_days)} />
+                <Cell
+                  label={t.detail.lastMaintenance}
+                  value={formatDate(equipment.last_maintenance, locale)}
+                  mono
+                />
+                <Cell
+                  label={t.detail.nextMaintenance}
+                  value={formatDate(status.next, locale)}
+                  mono
+                />
+                <Cell label={t.detail.totalDone} value={String(equipment.maintenance_count)} mono />
+                <Cell
+                  label={t.detail.lastVisit}
+                  value={
+                    equipment.last_scan ? formatDate(equipment.last_scan, locale) : t.common.none
+                  }
+                  mono
+                />
+              </View>
             </View>
 
             <Button
               label={t.detail.logMaintenance}
               icon="wrench"
-              onPress={() => router.push({ pathname: '/equipment/[id]/maintenance', params: { id } })}
+              onPress={() => router.push({ pathname: '/equipment/[id]/maintenance', params: logParams })}
               style={styles.primaryAction}
+            />
+            <Button
+              label={t.detail.printTag}
+              icon="printer-outline"
+              variant="secondary"
+              onPress={printTag}
+              loading={printing}
+              style={styles.secondaryAction}
             />
 
             <SectionTitle title={t.detail.history} count={history.length} />
@@ -172,43 +252,70 @@ export default function EquipmentDetail() {
             body={t.detail.historyEmptyBody}
           />
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <MaintenanceItem
             maintenance={item}
-            onPress={() => router.push({
-              pathname: '/equipment/[id]/maintenance',
-              params: { id, maintenanceId: item.id },
-            })}
+            last={index === history.length - 1}
+            onPress={() =>
+              router.push({
+                pathname: '/equipment/[id]/maintenance',
+                params: { id, maintenanceId: item.id },
+              })
+            }
           />
         )}
         ListFooterComponent={
-          <Button
-            label={t.detail.deleteEquipment}
-            variant="danger"
-            icon="trash-can-outline"
-            onPress={confirmDelete}
-            disabled={deleting}
-            style={styles.deleteAction}
-          />
+          <View>
+            <SectionTitle title={t.detail.visits} count={visits.length} />
+            {visits.length === 0 ? (
+              <Text style={[type.support, { color: palette.inkMuted }]}>
+                {t.detail.visitsEmptyBody}
+              </Text>
+            ) : (
+              visits.map((visit) => (
+                <View
+                  key={visit.id}
+                  style={[styles.visitRow, { borderBottomColor: palette.line }]}>
+                  <MaterialCommunityIcons name="qrcode-scan" size={16} color={palette.inkMuted} />
+                  <Text style={[type.mono, tabular, { color: palette.ink, flex: 1 }]}>
+                    {formatDate(visit.scanned_at, locale)}{'  '}
+                    {formatTime(new Date(visit.scanned_at), locale)}
+                  </Text>
+                  {visit.synced === 0 ? (
+                    <MaterialCommunityIcons
+                      name="cloud-off-outline"
+                      size={13}
+                      color={palette.inkFaint}
+                    />
+                  ) : null}
+                </View>
+              ))
+            )}
+
+            <Button
+              label={t.detail.deleteEquipment}
+              variant="danger"
+              icon="trash-can-outline"
+              onPress={confirmDelete}
+              disabled={deleting}
+              style={styles.deleteAction}
+            />
+          </View>
         }
       />
     </View>
   );
 }
 
-function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+function Cell({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   const palette = usePalette();
 
   return (
-    <View style={styles.row}>
-      <Text style={[type.support, { color: palette.inkMuted }]}>{label}</Text>
+    <View style={styles.cell}>
+      <Text style={[type.micro, { color: palette.inkFaint }]}>{label}</Text>
       <Text
-        style={[
-          mono ? type.mono : type.supportStrong,
-          tabular,
-          styles.rowValue,
-          { color: palette.ink },
-        ]}>
+        style={[mono ? type.monoStrong : type.supportStrong, tabular, { color: palette.ink }]}
+        numberOfLines={2}>
         {value}
       </Text>
     </View>
@@ -218,22 +325,46 @@ function Row({ label, value, mono = false }: { label: string; value: string; mon
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: spacing.lg },
-  card: { borderRadius: radius.lg, borderWidth: 1, padding: spacing.lg },
-  cardHeader: {
+  visit: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.md,
+    borderWidth: 1.5,
+    borderRadius: radius.sm,
+    padding: spacing.md,
     marginBottom: spacing.md,
   },
-  statusLine: { marginBottom: spacing.xs },
-  divider: { height: 1, marginVertical: spacing.md },
-  row: {
+  visitText: { flex: 1, gap: 2 },
+  plate: { borderWidth: 1.5, borderRadius: radius.sm, overflow: 'hidden' },
+  plateBar: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  plateTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     gap: spacing.md,
-    paddingVertical: spacing.sm,
+    padding: spacing.lg,
+    alignItems: 'flex-start',
   },
-  rowValue: { flex: 1, textAlign: 'right' },
+  plateTitle: { flex: 1, gap: 4 },
+  categoryRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  qr: { borderWidth: 1.5 },
+  figureRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', padding: spacing.lg, rowGap: spacing.lg },
+  cell: { width: '50%', gap: 2, paddingRight: spacing.sm },
   primaryAction: { marginTop: spacing.lg },
+  secondaryAction: { marginTop: spacing.sm },
+  visitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+  },
   deleteAction: { marginTop: spacing.xl },
 });

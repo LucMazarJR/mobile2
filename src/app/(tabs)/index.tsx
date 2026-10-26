@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,6 +11,7 @@ import BackupBar from '@/components/BackupBar';
 import EmptyState from '@/components/EmptyState';
 import EquipmentCard from '@/components/EquipmentCard';
 import FilterChips, { type FilterKey } from '@/components/FilterChips';
+import Wordmark from '@/components/Wordmark';
 import { listEquipment } from '@/db/equipment';
 import { findSector } from '@/db/sectors';
 import type { EquipmentWithSummary } from '@/db/types';
@@ -101,32 +102,16 @@ export default function EquipmentList() {
     <View style={[styles.screen, { backgroundColor: palette.surfaceSunken }]}>
       <Stack.Screen
         options={{
-          title: sectorName ?? t.nav.home,
+          headerTitle: () => <Wordmark />,
           headerRight: () => (
-            <View style={styles.headerActions}>
-              <Pressable
-                onPress={() => router.push('/sectors')}
-                accessibilityRole="button"
-                accessibilityLabel={t.sectors.manage}
-                hitSlop={12}>
-                <MaterialCommunityIcons
-                  name="folder-outline"
-                  size={22}
-                  color={palette.inkMuted}
-                />
-              </Pressable>
-              <Pressable
-                onPress={() => router.push('/about')}
-                accessibilityRole="button"
-                accessibilityLabel={t.nav.about}
-                hitSlop={12}>
-                <MaterialCommunityIcons
-                  name="information-outline"
-                  size={22}
-                  color={palette.inkMuted}
-                />
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={() => router.push('/equipment/new')}
+              accessibilityRole="button"
+              accessibilityLabel={t.home.newEquipment}
+              hitSlop={10}
+              style={[styles.addButton, { backgroundColor: palette.ink }]}>
+              <MaterialCommunityIcons name="plus" size={22} color={palette.onBrand} />
+            </Pressable>
           ),
         }}
       />
@@ -139,19 +124,30 @@ export default function EquipmentList() {
         itemLayoutAnimation={LinearTransition.duration(200)}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 100 },
+          { paddingBottom: insets.bottom + spacing.xxl },
           visible.length === 0 && styles.contentEmpty,
         ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onPullToRefresh}
-            tintColor={palette.brand}
+            tintColor={palette.ink}
           />
         }
         ListHeaderComponent={
           <View>
             <BackupBar />
+            {sectorName ? (
+              <Pressable
+                onPress={() => router.setParams({ sectorId: undefined })}
+                accessibilityRole="button"
+                accessibilityLabel={t.sectors.clearFilter}
+                style={[styles.sectorTag, { borderColor: palette.ink }]}>
+                <MaterialCommunityIcons name="shape-outline" size={16} color={palette.ink} />
+                <Text style={[type.micro, { color: palette.ink }]}>{sectorName}</Text>
+                <MaterialCommunityIcons name="close" size={16} color={palette.ink} />
+              </Pressable>
+            ) : null}
             {!nothingAtAll ? (
               <>
                 <View
@@ -222,54 +218,42 @@ export default function EquipmentList() {
         )}
       />
 
-      <Pressable
-        onPress={() => router.push('/equipment/new')}
-        accessibilityRole="button"
-        accessibilityLabel={t.home.newEquipment}
-        style={({ pressed }) => [
-          styles.fab,
-          { backgroundColor: palette.brand, bottom: insets.bottom + spacing.lg },
-          pressed && styles.fabPressed,
-        ]}>
-        <MaterialCommunityIcons name="plus" size={20} color={palette.onBrand} />
-        <Animated.Text style={[type.bodyStrong, { color: palette.onBrand }]}>
-          {t.home.newEquipment}
-        </Animated.Text>
-      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  addButton: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
   content: { padding: spacing.lg },
   contentEmpty: { flexGrow: 1 },
+  sectorTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.sm,
+    borderWidth: 1.5,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    marginBottom: spacing.md,
+  },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
-    minHeight: 46,
+    minHeight: 48,
     marginBottom: spacing.md,
   },
   searchInput: { flex: 1, paddingVertical: spacing.sm },
-  fab: {
-    position: 'absolute',
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  fabPressed: { opacity: 0.9 },
 });

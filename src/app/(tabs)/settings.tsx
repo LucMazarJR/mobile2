@@ -3,6 +3,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import BrandMark from '@/components/BrandMark';
 import Button from '@/components/Button';
 import SectionTitle from '@/components/SectionTitle';
 import { databaseVersion } from '@/db/schema';
@@ -41,9 +42,24 @@ export default function About() {
     <ScrollView
       style={{ backgroundColor: palette.surfaceSunken }}
       contentContainerStyle={styles.content}>
-      <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.line }]}>
+      <View style={[styles.identity, { backgroundColor: palette.ink }]}>
+        <BrandMark size={72} plate={palette.signal} ink="#161616" />
+        <View style={styles.identityText}>
+          <Text style={[type.display, { color: palette.onBrand }]}>{t.brand.name}</Text>
+          <Text style={[type.support, { color: palette.onBrand, opacity: 0.8 }]}>
+            {t.brand.tagline}
+          </Text>
+        </View>
+      </View>
+
+      <View
+        style={[
+          styles.card,
+          styles.cardSpaced,
+          { backgroundColor: palette.surface, borderColor: palette.line },
+        ]}>
         <View style={styles.cardHeader}>
-          <MaterialCommunityIcons name="shield-check-outline" size={22} color={palette.brand} />
+          <MaterialCommunityIcons name="shield-check-outline" size={22} color={palette.ink} />
           <Text style={[type.cardTitle, { color: palette.ink, flex: 1 }]}>
             {t.about.howItWorksTitle}
           </Text>
@@ -121,8 +137,8 @@ export default function About() {
         onPress={() => setShowTechnical((current) => !current)}
         accessibilityRole="button"
         style={styles.technicalToggle}>
-        <Text style={[type.section, { color: palette.inkFaint }]}>{t.about.technicalTitle}</Text>
-        <Text style={[type.micro, { color: palette.brand }]}>
+        <Text style={[type.section, { color: palette.ink }]}>{t.about.technicalTitle}</Text>
+        <Text style={[type.micro, { color: palette.ink }]}>
           {showTechnical ? t.about.technicalHide : t.about.technicalShow}
         </Text>
       </Pressable>
@@ -180,7 +196,16 @@ function Row({
 
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  card: { borderRadius: radius.lg, borderWidth: 1, padding: spacing.lg },
+  identity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    borderRadius: radius.sm,
+    padding: spacing.lg,
+  },
+  identityText: { flex: 1, gap: 2 },
+  card: { borderRadius: radius.sm, borderWidth: 1, padding: spacing.lg },
+  cardSpaced: { marginTop: spacing.md },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,8 +229,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
   },
   technicalToggle: {
     flexDirection: 'row',

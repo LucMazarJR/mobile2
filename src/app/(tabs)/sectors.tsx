@@ -13,6 +13,7 @@ import { createSector, deleteSector, listSectors, renameSector } from '@/db/sect
 import type { EquipmentWithSummary, SectorWithCount } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
+import { shareLabels } from '@/services/labels';
 import { radius, spacing, tabular, type, usePalette } from '@/theme';
 import { computeStatus } from '@/utils/status';
 
@@ -74,6 +75,21 @@ export default function Sectors() {
     }
   }
 
+  async function printSector(sector: SectorWithCount) {
+    const items = equipment.filter((item) => item.sector_id === sector.id);
+    if (items.length === 0) {
+      Alert.alert(sector.name, t.sectors.printEmpty);
+      return;
+    }
+
+    try {
+      await shareLabels(items, t.labels);
+    } catch (problem) {
+      console.error('[sectors] could not create the tags', problem);
+      Alert.alert(t.errors.printTitle, t.errors.printBody);
+    }
+  }
+
   function confirmDelete(sector: SectorWithCount) {
     Alert.alert(t.sectors.deleteTitle(sector.name), t.sectors.deleteBody, [
       { text: t.common.cancel, style: 'cancel' },
@@ -101,7 +117,7 @@ export default function Sectors() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + spacing.xl },
+          { paddingBottom: spacing.xxl },
           sectors.length === 0 && styles.contentEmpty,
         ]}
         // Without this the first tap on the button below only dismisses the
@@ -110,7 +126,7 @@ export default function Sectors() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View>
-            <Text style={[type.support, styles.intro, { color: palette.inkMuted }]}>
+            <Text style={[type.body, styles.intro, { color: palette.inkMuted }]}>
               {t.sectors.subtitle}
             </Text>
 
@@ -151,7 +167,7 @@ export default function Sectors() {
         }
         ListEmptyComponent={
           <EmptyState
-            icon="folder-outline"
+            icon="shape-outline"
             title={t.sectors.emptyTitle}
             body={t.sectors.emptyBody}
           />
@@ -169,17 +185,36 @@ export default function Sectors() {
                 { backgroundColor: palette.surface, borderColor: palette.line },
                 pressed && styles.pressed,
               ]}>
-              <MaterialCommunityIcons name="folder-outline" size={22} color={palette.inkMuted} />
-
-              <View style={styles.rowText}>
-                <Text style={[type.bodyStrong, { color: palette.ink }]} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={[type.support, tabular, { color: palette.inkFaint }]}>
-                  {t.sectors.countEquipment(item.equipment_count)}
-                  {overdue > 0 ? ` · ${t.sectors.countOverdue(overdue)}` : ''}
+              <View style={[styles.count, { borderRightColor: palette.line }]}>
+                <Text style={[type.figure, tabular, { color: palette.ink }]}>
+                  {item.equipment_count}
                 </Text>
               </View>
+
+              <View style={styles.rowText}>
+                <Text style={[type.cardTitle, { color: palette.ink }]} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text
+                  style={[
+                    type.micro,
+                    tabular,
+                    { color: overdue > 0 ? palette.critical : palette.inkFaint },
+                  ]}>
+                  {overdue > 0
+                    ? t.sectors.countOverdue(overdue)
+                    : t.sectors.countEquipment(item.equipment_count)}
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => printSector(item)}
+                accessibilityRole="button"
+                accessibilityLabel={t.sectors.printLabels}
+                hitSlop={10}
+                style={styles.rowAction}>
+                <MaterialCommunityIcons name="printer-outline" size={18} color={palette.ink} />
+              </Pressable>
 
               <Pressable
                 onPress={() => {
@@ -191,7 +226,7 @@ export default function Sectors() {
                 accessibilityLabel={t.sectors.rename}
                 hitSlop={10}
                 style={styles.rowAction}>
-                <MaterialCommunityIcons name="pencil" size={18} color={palette.brand} />
+                <MaterialCommunityIcons name="pencil" size={18} color={palette.ink} />
               </Pressable>
 
               <Pressable
@@ -226,12 +261,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    paddingRight: spacing.md,
+    marginBottom: -1,
+    overflow: 'hidden',
+  },
+  count: {
+    width: 64,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRightWidth: 1,
   },
   pressed: { opacity: 0.7 },
-  rowText: { flex: 1, gap: 2 },
+  rowText: { flex: 1, gap: 2, paddingVertical: spacing.md },
   rowAction: { padding: spacing.xs },
 });

@@ -110,3 +110,16 @@ export async function deleteEquipment(db: SQLiteDatabase, id: string): Promise<v
     );
   });
 }
+
+// The short code printed under a QR label is the first 8 hex digits of the id.
+// Used when a label is damaged and someone types the code by hand.
+export async function findEquipmentByCode(
+  db: SQLiteDatabase,
+  code: string
+): Promise<EquipmentWithSummary | null> {
+  return db.getFirstAsync<EquipmentWithSummary>(
+    `${SELECT_WITH_SUMMARY}
+      WHERE UPPER(REPLACE(e.id, '-', '')) LIKE ? AND e.deleted_at IS NULL`,
+    [`${code.toUpperCase()}%`]
+  );
+}
