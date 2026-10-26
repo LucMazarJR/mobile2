@@ -5,7 +5,7 @@ import { tagCode } from '@/services/ids';
 // What a printed label says. It is a link, not a bare id, on purpose: read by
 // the app it opens the equipment and records the visit, and read by the phone's
 // own camera it opens the app through the same address. One format, two readers.
-const SCHEME = 'plaqueta';
+const SCHEME = 'stamp';
 
 export function visitLink(equipmentId: string): string {
   return `${SCHEME}://visit/${equipmentId}`;

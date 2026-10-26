@@ -1,6 +1,6 @@
 import { useColorScheme } from 'react-native';
 
-// "Plaqueta" palette.
+// "Stamp" palette.
 //
 // Two rules drive everything. First: red, amber and green are DATA, not
 // decoration. They encode how urgent a service is, so the brand has to stay out

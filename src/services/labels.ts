@@ -25,7 +25,7 @@ function labelHtml(item: EquipmentWithSummary, text: LabelText): string {
     <div class="label">
       <div class="qr">${qrSvgMarkup(visitLink(item.id))}</div>
       <div class="info">
-        <div class="brand">PLAQUETA</div>
+        <div class="brand">STAMP</div>
         <div class="name">${escapeHtml(item.name)}</div>
         <div class="place">${escapeHtml(place)}</div>
         <div class="code">${tagCode(item.id)}</div>

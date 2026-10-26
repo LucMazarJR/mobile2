@@ -14,8 +14,8 @@ export const en: Dictionary = {
   },
 
   brand: {
-    name: 'Plaqueta',
-    tagline: 'Maintenance with a tag and proof',
+    name: 'Stamp',
+    tagline: 'Every visit, stamped',
   },
 
   tabs: {
@@ -39,7 +39,7 @@ export const en: Dictionary = {
     hint: 'Point at the QR on the equipment tag',
     permissionTitle: 'The camera reads the tag',
     permissionBody:
-      'Plaqueta uses the camera to read equipment QR codes and identification plates. Images are not kept.',
+      'Stamp uses the camera to read equipment QR codes and identification plates. Images are not kept.',
     allowCamera: 'Allow camera',
     openSettings: 'Open settings',
     torch: 'Flashlight',
@@ -49,7 +49,7 @@ export const en: Dictionary = {
     codeGo: 'Open',
     codeNotFound: 'No equipment with that code.',
     notRecognizedTitle: 'Tag not recognised',
-    notRecognizedBody: 'That QR does not belong to a Plaqueta equipment item.',
+    notRecognizedBody: 'That QR does not belong to a Stamp equipment item.',
     tryAgain: 'Scan again',
     unknownTitle: 'Equipment not found',
     unknownBody:
@@ -270,7 +270,7 @@ export const en: Dictionary = {
   },
 
   labels: {
-    pageTitle: 'Plaqueta tags',
+    pageTitle: 'Stamp tags',
     scanToOpen: 'Scan to record the visit',
     noSector: 'No sector',
   },

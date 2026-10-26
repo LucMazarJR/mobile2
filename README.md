@@ -1,4 +1,4 @@
-# Plaqueta
+# Stamp
 
 Aplicativo mobile (React Native + Expo) para acompanhar a manutenção de
 equipamentos: extintores, ar-condicionados, geradores, máquinas de laboratório
@@ -6,8 +6,9 @@ e afins. Cada equipamento tem uma **etiqueta com QR Code** que prova que o
 técnico esteve diante dele, e a **plaqueta de identificação** pode ser lida pela
 câmera para preencher o cadastro.
 
-O nome vem justamente disso: a plaqueta metálica presa ao equipamento, que é o
-que o app lê e o que a marca desenha.
+O nome vem do carimbo de inspeção: cada visita ao equipamento é carimbada pelo
+app, com data, hora e a prova de que o técnico esteve lá. A marca desenha a
+plaqueta metálica presa ao equipamento, que é o que o app lê.
 
 Interface em **português e inglês**; o código, os arquivos e o banco de dados
 estão em inglês.
@@ -176,9 +177,12 @@ plaquetas em lugares ruins.
 4. A manutenção registrada a partir dessa visita guarda `scan_id` e aparece no
    histórico com o selo **Verificada no local**.
 
-O QR contém um link, `plaqueta://visit/<id>`. Lido pelo app, abre a ficha e
+O QR contém um link, `stamp://visit/<id>`. Lido pelo app, abre a ficha e
 registra a visita. Lido pela câmera comum do celular, abre o app pelo mesmo
-endereço. Toda leitura passa pela rota [`src/app/visit/[id].tsx`](src/app/visit/%5Bid%5D.tsx),
+endereço. Etiquetas impressas na fase em que o app se chamava Plaqueta continuam valendo
+dentro do app, porque o scanner reconhece o identificador em qualquer endereço;
+só a abertura pela câmera comum do celular depende do endereço novo. Toda leitura
+passa pela rota [`src/app/visit/[id].tsx`](src/app/visit/%5Bid%5D.tsx),
 o único lugar que grava visitas, então não existe segundo caminho que possa
 esquecer de gravar.
 

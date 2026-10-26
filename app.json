@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Plaqueta",
+    "name": "Stamp",
     "slug": "luciano",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "plaqueta",
+    "scheme": "stamp",
     "userInterfaceStyle": "automatic",
     "ios": {},
     "android": {
@@ -44,7 +44,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "A Plaqueta usa a câmera para ler as etiquetas QR e as plaquetas dos equipamentos.",
+          "cameraPermission": "O Stamp usa a câmera para ler as etiquetas QR e as plaquetas dos equipamentos.",
           "microphonePermission": false,
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true

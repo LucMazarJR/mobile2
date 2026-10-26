@@ -19,8 +19,8 @@ export const ptBR = {
   },
 
   brand: {
-    name: 'Plaqueta',
-    tagline: 'Manutenção com etiqueta e prova',
+    name: 'Stamp',
+    tagline: 'Cada visita, carimbada',
   },
 
   tabs: {
@@ -44,7 +44,7 @@ export const ptBR = {
     hint: 'Aponte para o QR da etiqueta do equipamento',
     permissionTitle: 'A câmera lê a etiqueta',
     permissionBody:
-      'A Plaqueta usa a câmera para ler o QR dos equipamentos e a plaqueta de identificação. As imagens não ficam guardadas.',
+      'O Stamp usa a câmera para ler o QR dos equipamentos e a plaqueta de identificação. As imagens não ficam guardadas.',
     allowCamera: 'Permitir câmera',
     openSettings: 'Abrir ajustes',
     torch: 'Lanterna',
@@ -54,7 +54,7 @@ export const ptBR = {
     codeGo: 'Abrir',
     codeNotFound: 'Nenhum equipamento com esse código.',
     notRecognizedTitle: 'Etiqueta não reconhecida',
-    notRecognizedBody: 'Esse QR não é de um equipamento da Plaqueta.',
+    notRecognizedBody: 'Esse QR não é de um equipamento do Stamp.',
     tryAgain: 'Escanear de novo',
     unknownTitle: 'Equipamento não encontrado',
     unknownBody:
@@ -278,7 +278,7 @@ export const ptBR = {
   },
 
   labels: {
-    pageTitle: 'Etiquetas Plaqueta',
+    pageTitle: 'Etiquetas Stamp',
     scanToOpen: 'Escaneie para registrar a visita',
     noSector: 'Sem setor',
   },
