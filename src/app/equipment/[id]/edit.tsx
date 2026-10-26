@@ -32,6 +32,9 @@ export default function EditEquipment() {
         location: found.location ?? '',
         intervalDays: found.interval_days,
         sectorId: found.sector_id,
+        manufacturer: found.manufacturer ?? '',
+        model: found.model ?? '',
+        serialNumber: found.serial_number ?? '',
       });
     });
   }, [db, id, router]);

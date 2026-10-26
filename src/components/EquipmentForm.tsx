@@ -36,6 +36,9 @@ export default function EquipmentForm({
   const [name, setName] = useState(initial?.name ?? '');
   const [category, setCategory] = useState(initial?.category ?? '');
   const [location, setLocation] = useState(initial?.location ?? '');
+  const [manufacturer, setManufacturer] = useState(initial?.manufacturer ?? '');
+  const [model, setModel] = useState(initial?.model ?? '');
+  const [serialNumber, setSerialNumber] = useState(initial?.serialNumber ?? '');
   const [interval, setInterval] = useState(String(initial?.intervalDays ?? 30));
   const [errors, setErrors] = useState<{ name?: string; interval?: string }>({});
   const [saving, setSaving] = useState(false);
@@ -74,6 +77,9 @@ export default function EquipmentForm({
         location: location.trim(),
         intervalDays,
         sectorId,
+        manufacturer: manufacturer.trim(),
+        model: model.trim(),
+        serialNumber: serialNumber.trim(),
       });
     } finally {
       setSaving(false);
@@ -120,6 +126,28 @@ export default function EquipmentForm({
           value={location}
           onChangeText={setLocation}
           placeholder={t.equipmentForm.locationPlaceholder}
+        />
+
+        <Field
+          label={t.equipmentForm.manufacturer}
+          value={manufacturer}
+          onChangeText={setManufacturer}
+          placeholder={t.equipmentForm.manufacturerPlaceholder}
+        />
+
+        <Field
+          label={t.equipmentForm.model}
+          value={model}
+          onChangeText={setModel}
+          placeholder={t.equipmentForm.modelPlaceholder}
+        />
+
+        <Field
+          label={t.equipmentForm.serialNumber}
+          value={serialNumber}
+          onChangeText={setSerialNumber}
+          placeholder={t.equipmentForm.serialNumberPlaceholder}
+          autoCapitalize="characters"
         />
 
         <Field
