@@ -44,7 +44,7 @@ export default function SectorPicker({ sectors, value, onChange, onCreate }: Pro
 
   return (
     <View style={styles.container}>
-      <Text style={[type.supportStrong, { color: palette.ink, marginBottom: spacing.sm }]}>
+      <Text style={[type.section, { color: palette.inkMuted, marginBottom: spacing.sm }]}>
         {t.sectors.pickerLabel}
       </Text>
 
@@ -62,6 +62,7 @@ export default function SectorPicker({ sectors, value, onChange, onCreate }: Pro
                 {
                   backgroundColor: selected ? palette.brand : palette.surface,
                   borderColor: selected ? palette.brand : palette.line,
+                  borderWidth: 1.5,
                 },
               ]}>
               <Text
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     gap: 5,
     minHeight: 40,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: 1,
   },
   chipDashed: { borderStyle: 'dashed' },

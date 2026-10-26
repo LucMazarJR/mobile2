@@ -28,16 +28,26 @@ export async function findMaintenance(
 export async function createMaintenance(
   db: SQLiteDatabase,
   equipmentId: string,
-  { type, description, technician, performedAt }: MaintenanceInput
+  { type, description, technician, performedAt, scanId }: MaintenanceInput
 ): Promise<string> {
   const id = newId();
   const now = nowISO();
 
   await db.runAsync(
     `INSERT INTO maintenance
-       (id, equipment_id, type, description, technician, performed_at, created_at, deleted_at, synced)
-     VALUES (?, ?, ?, ?, ?, ?, ?, NULL, 0)`,
-    [id, equipmentId, type, description || null, technician || null, performedAt, now]
+       (id, equipment_id, type, description, technician, performed_at, scan_id,
+        created_at, deleted_at, synced)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 0)`,
+    [
+      id,
+      equipmentId,
+      type,
+      description || null,
+      technician || null,
+      performedAt,
+      scanId ?? null,
+      now,
+    ]
   );
 
   await touchEquipment(db, equipmentId, now);

@@ -1,9 +1,14 @@
 import {
-  Inter_400Regular,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  useFonts,
-} from '@expo-google-fonts/inter';
+  BarlowCondensed_600SemiBold,
+  BarlowCondensed_700Bold,
+} from '@expo-google-fonts/barlow-condensed';
+import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
+import {
+  IBMPlexSans_400Regular,
+  IBMPlexSans_500Medium,
+  IBMPlexSans_600SemiBold,
+} from '@expo-google-fonts/ibm-plex-sans';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
@@ -13,7 +18,7 @@ import { ActivityIndicator, StyleSheet, View, useColorScheme } from 'react-nativ
 import { migrateDatabase } from '@/db/schema';
 import { I18nProvider, useI18n } from '@/i18n';
 import { BackupProvider } from '@/services/BackupContext';
-import { usePalette } from '@/theme';
+import { fonts, usePalette } from '@/theme';
 
 function Loading() {
   const palette = usePalette();
@@ -31,27 +36,34 @@ function Navigator() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: palette.surface },
-        headerTitleStyle: { color: palette.ink, fontFamily: 'Inter_600SemiBold', fontSize: 17 },
-        headerTintColor: palette.brand,
+        headerStyle: { backgroundColor: palette.surfaceSunken },
+        headerTitleStyle: {
+          color: palette.ink,
+          fontFamily: fonts.display,
+          fontSize: 24,
+        },
+        headerTintColor: palette.ink,
         headerShadowVisible: false,
         contentStyle: { backgroundColor: palette.surfaceSunken },
       }}>
-      <Stack.Screen name="index" options={{ title: t.nav.home }} />
-      <Stack.Screen name="about" options={{ title: t.nav.about, presentation: 'modal' }} />
-      <Stack.Screen name="sectors" options={{ title: t.sectors.title }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="visit/[id]" options={{ headerShown: false, animation: 'fade' }} />
       <Stack.Screen
         name="equipment/new"
-        options={{ title: t.nav.newEquipment, presentation: 'modal' }}
+        options={{ title: t.nav.newEquipment.toLocaleUpperCase(), presentation: 'modal' }}
       />
-      <Stack.Screen name="equipment/[id]/index" options={{ title: t.nav.equipment }} />
+      <Stack.Screen name="equipment/[id]/index" options={{ title: t.nav.equipment.toLocaleUpperCase() }} />
+      <Stack.Screen
+        name="equipment/ocr"
+        options={{ title: t.ocr.title.toLocaleUpperCase(), presentation: 'modal' }}
+      />
       <Stack.Screen
         name="equipment/[id]/edit"
-        options={{ title: t.nav.editEquipment, presentation: 'modal' }}
+        options={{ title: t.nav.editEquipment.toLocaleUpperCase(), presentation: 'modal' }}
       />
       <Stack.Screen
         name="equipment/[id]/maintenance"
-        options={{ title: t.nav.newMaintenance, presentation: 'modal' }}
+        options={{ title: t.nav.newMaintenance.toLocaleUpperCase(), presentation: 'modal' }}
       />
     </Stack>
   );
@@ -61,9 +73,13 @@ export default function RootLayout() {
   const scheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
-    Inter_400Regular,
-    Inter_600SemiBold,
-    Inter_700Bold,
+    BarlowCondensed_600SemiBold,
+    BarlowCondensed_700Bold,
+    IBMPlexMono_400Regular,
+    IBMPlexMono_500Medium,
+    IBMPlexSans_400Regular,
+    IBMPlexSans_500Medium,
+    IBMPlexSans_600SemiBold,
   });
 
   // A font can never be allowed to hold the app hostage. If it errors, or if it

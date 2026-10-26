@@ -15,7 +15,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 // Portuguese tables because that is what shipped on real devices. Step 3
 // renames them. Rewriting step 1 would break every phone that already ran it.
 
-const TARGET_VERSION = 5;
+const TARGET_VERSION = 6;
 
 export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
@@ -173,6 +173,54 @@ export async function migrateDatabase(db: SQLiteDatabase): Promise<void> {
     version = 5;
     await setVersion(db, 5);
   }
+
+  if (version < 6) {
+    // Computer vision results. A scan is one QR label read on site (proof that
+    // somebody stood in front of the equipment); a nameplate reading is what OCR
+    // extracted from the metal plate, kept together with the raw text so the
+    // extraction can always be audited. Every statement is guarded, so a step
+    // that stopped halfway can simply run again.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS scans (
+        id TEXT PRIMARY KEY NOT NULL,
+        equipment_id TEXT NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+        scanned_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        deleted_at TEXT,
+        synced INTEGER NOT NULL DEFAULT 0
+      );
+
+      CREATE TABLE IF NOT EXISTS nameplate_readings (
+        id TEXT PRIMARY KEY NOT NULL,
+        equipment_id TEXT NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+        raw_text TEXT NOT NULL,
+        manufacturer TEXT,
+        model TEXT,
+        serial_number TEXT,
+        created_at TEXT NOT NULL,
+        deleted_at TEXT,
+        synced INTEGER NOT NULL DEFAULT 0
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_scans_equipment ON scans(equipment_id);
+      CREATE INDEX IF NOT EXISTS idx_readings_equipment ON nameplate_readings(equipment_id);
+    `);
+
+    await addColumnIfMissing(db, 'equipment', 'manufacturer', 'TEXT');
+    await addColumnIfMissing(db, 'equipment', 'model', 'TEXT');
+    await addColumnIfMissing(db, 'equipment', 'serial_number', 'TEXT');
+    await addColumnIfMissing(db, 'maintenance', 'scan_id', 'TEXT');
+
+    // Equipment and maintenance gained columns the cloud copy does not have yet
+    // for rows already uploaded, so they go back in the queue once.
+    await db.execAsync(`
+      UPDATE equipment SET synced = 0;
+      UPDATE maintenance SET synced = 0;
+    `);
+
+    version = 6;
+    await setVersion(db, 6);
+  }
 }
 
 // Written right after each step succeeds, never once at the end: a run that
@@ -203,7 +251,14 @@ export async function databaseVersion(db: SQLiteDatabase): Promise<number> {
 
 // Tables exchanged with the cloud, in upload order. Parents go first, or the
 // foreign keys fail in Postgres: a sector before the equipment that points at
-// it, and that equipment before its maintenance history.
-export const SYNCED_TABLES = ['sectors', 'equipment', 'maintenance'] as const;
+// it, the equipment before its scans and readings, and the scans before the
+// maintenance that points at the visit that originated it.
+export const SYNCED_TABLES = [
+  'sectors',
+  'equipment',
+  'scans',
+  'nameplate_readings',
+  'maintenance',
+] as const;
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];

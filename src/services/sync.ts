@@ -95,7 +95,7 @@ function normalizeDate(value: unknown): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-const DATE_COLUMNS = ['created_at', 'updated_at', 'performed_at', 'deleted_at'];
+const DATE_COLUMNS = ['created_at', 'updated_at', 'performed_at', 'scanned_at', 'deleted_at'];
 
 // Brings down what this phone has never seen. One rule makes it safe: INSERT OR
 // IGNORE, local always wins. That kills every conflict class at once: a row

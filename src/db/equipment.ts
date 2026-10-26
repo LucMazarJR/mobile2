@@ -12,7 +12,9 @@ const SELECT_WITH_SUMMARY = `
     (SELECT MAX(m.performed_at) FROM maintenance m
       WHERE m.equipment_id = e.id AND m.deleted_at IS NULL) AS last_maintenance,
     (SELECT COUNT(*) FROM maintenance m
-      WHERE m.equipment_id = e.id AND m.deleted_at IS NULL) AS maintenance_count
+      WHERE m.equipment_id = e.id AND m.deleted_at IS NULL) AS maintenance_count,
+    (SELECT MAX(sc.scanned_at) FROM scans sc
+      WHERE sc.equipment_id = e.id AND sc.deleted_at IS NULL) AS last_scan
   FROM equipment e
   LEFT JOIN sectors s ON s.id = e.sector_id AND s.deleted_at IS NULL
 `;
@@ -35,17 +37,29 @@ export async function findEquipment(
 
 export async function createEquipment(
   db: SQLiteDatabase,
-  { name, category, location, intervalDays, sectorId }: EquipmentInput
+  { name, category, location, intervalDays, sectorId, manufacturer, model, serialNumber }: EquipmentInput
 ): Promise<string> {
   const id = newId();
   const now = nowISO();
 
   await db.runAsync(
     `INSERT INTO equipment
-       (id, name, category, location, sector_id, interval_days,
-        created_at, updated_at, deleted_at, synced)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 0)`,
-    [id, name, category || null, location || null, sectorId, intervalDays, now, now]
+       (id, name, category, location, sector_id, manufacturer, model, serial_number,
+        interval_days, created_at, updated_at, deleted_at, synced)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 0)`,
+    [
+      id,
+      name,
+      category || null,
+      location || null,
+      sectorId,
+      manufacturer || null,
+      model || null,
+      serialNumber || null,
+      intervalDays,
+      now,
+      now,
+    ]
   );
 
   return id;
@@ -56,14 +70,25 @@ export async function createEquipment(
 export async function updateEquipment(
   db: SQLiteDatabase,
   id: string,
-  { name, category, location, intervalDays, sectorId }: EquipmentInput
+  { name, category, location, intervalDays, sectorId, manufacturer, model, serialNumber }: EquipmentInput
 ): Promise<void> {
   await db.runAsync(
     `UPDATE equipment
-        SET name = ?, category = ?, location = ?, sector_id = ?, interval_days = ?,
-            updated_at = ?, synced = 0
+        SET name = ?, category = ?, location = ?, sector_id = ?, manufacturer = ?,
+            model = ?, serial_number = ?, interval_days = ?, updated_at = ?, synced = 0
       WHERE id = ?`,
-    [name, category || null, location || null, sectorId, intervalDays, nowISO(), id]
+    [
+      name,
+      category || null,
+      location || null,
+      sectorId,
+      manufacturer || null,
+      model || null,
+      serialNumber || null,
+      intervalDays,
+      nowISO(),
+      id,
+    ]
   );
 }
 
@@ -73,13 +98,28 @@ export async function deleteEquipment(db: SQLiteDatabase, id: string): Promise<v
   const now = nowISO();
 
   await db.withTransactionAsync(async () => {
-    await db.runAsync(
-      'UPDATE maintenance SET deleted_at = ?, synced = 0 WHERE equipment_id = ? AND deleted_at IS NULL',
-      [now, id]
-    );
+    for (const table of ['maintenance', 'scans', 'nameplate_readings']) {
+      await db.runAsync(
+        `UPDATE ${table} SET deleted_at = ?, synced = 0 WHERE equipment_id = ? AND deleted_at IS NULL`,
+        [now, id]
+      );
+    }
     await db.runAsync(
       'UPDATE equipment SET deleted_at = ?, updated_at = ?, synced = 0 WHERE id = ?',
       [now, now, id]
     );
   });
+}
+
+// The short code printed under a QR label is the first 8 hex digits of the id.
+// Used when a label is damaged and someone types the code by hand.
+export async function findEquipmentByCode(
+  db: SQLiteDatabase,
+  code: string
+): Promise<EquipmentWithSummary | null> {
+  return db.getFirstAsync<EquipmentWithSummary>(
+    `${SELECT_WITH_SUMMARY}
+      WHERE UPPER(REPLACE(e.id, '-', '')) LIKE ? AND e.deleted_at IS NULL`,
+    [`${code.toUpperCase()}%`]
+  );
 }

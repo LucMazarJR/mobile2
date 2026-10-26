@@ -10,12 +10,12 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { radius, spacing, type, usePalette } from '@/theme';
+import { fonts, radius, spacing, usePalette } from '@/theme';
 
 type ButtonProps = {
   label: string;
   onPress?: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'signal';
   icon?: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   loading?: boolean;
   disabled?: boolean;
@@ -37,16 +37,21 @@ export default function Button({
   const background =
     variant === 'primary'
       ? palette.brand
-      : variant === 'secondary'
-        ? palette.surface
+      : variant === 'signal'
+        ? palette.signal
         : 'transparent';
 
   const foreground =
     variant === 'primary'
       ? palette.onBrand
-      : variant === 'danger'
-        ? palette.critical
-        : palette.ink;
+      : variant === 'signal'
+        ? palette.onSignal
+        : variant === 'danger'
+          ? palette.critical
+          : palette.ink;
+
+  const border =
+    variant === 'secondary' ? palette.ink : variant === 'danger' ? palette.critical : 'transparent';
 
   function handlePress() {
     if (inactive) return;
@@ -63,11 +68,7 @@ export default function Button({
       accessibilityState={{ disabled: inactive, busy: loading }}
       style={({ pressed }) => [
         styles.base,
-        {
-          backgroundColor: background,
-          borderColor: variant === 'secondary' ? palette.line : 'transparent',
-          borderWidth: variant === 'secondary' ? 1 : 0,
-        },
+        { backgroundColor: background, borderColor: border },
         pressed && !inactive && styles.pressed,
         inactive && styles.inactive,
         style,
@@ -76,8 +77,8 @@ export default function Button({
         <ActivityIndicator color={foreground} />
       ) : (
         <View style={styles.content}>
-          {icon ? <MaterialCommunityIcons name={icon} size={18} color={foreground} /> : null}
-          <Text style={[type.bodyStrong, { color: foreground }]}>{label}</Text>
+          {icon ? <MaterialCommunityIcons name={icon} size={19} color={foreground} /> : null}
+          <Text style={[styles.label, { color: foreground }]}>{label}</Text>
         </View>
       )}
     </Pressable>
@@ -86,13 +87,21 @@ export default function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 50,
+    minHeight: 52,
     borderRadius: radius.md,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
   },
   content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  pressed: { opacity: 0.85 },
-  inactive: { opacity: 0.45 },
+  label: {
+    fontFamily: fonts.display,
+    fontSize: 18,
+    lineHeight: 22,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  pressed: { opacity: 0.8, transform: [{ translateY: 1 }] },
+  inactive: { opacity: 0.4 },
 });

@@ -39,6 +39,37 @@ create table if not exists maintenance (
 
 alter table equipment add column if not exists sector_id uuid references sectors(id) on delete set null;
 
+-- Computer vision. A scan is one QR label read on site; a nameplate reading is
+-- what OCR extracted from the equipment plate, with the raw text kept as proof.
+alter table equipment add column if not exists manufacturer text;
+alter table equipment add column if not exists model text;
+alter table equipment add column if not exists serial_number text;
+
+create table if not exists scans (
+  id uuid primary key,
+  equipment_id uuid not null references equipment(id) on delete cascade,
+  scanned_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
+create table if not exists nameplate_readings (
+  id uuid primary key,
+  equipment_id uuid not null references equipment(id) on delete cascade,
+  raw_text text not null,
+  manufacturer text,
+  model text,
+  serial_number text,
+  created_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+
+-- The visit during which a service was logged ("verified on site").
+alter table maintenance add column if not exists scan_id uuid references scans(id) on delete set null;
+
+create index if not exists idx_scans_equipment on scans(equipment_id);
+create index if not exists idx_readings_equipment on nameplate_readings(equipment_id);
+
 create index if not exists idx_maintenance_equipment
   on maintenance(equipment_id);
 
@@ -93,6 +124,8 @@ drop table if exists equipamentos;
 alter table sectors enable row level security;
 alter table equipment enable row level security;
 alter table maintenance enable row level security;
+alter table scans enable row level security;
+alter table nameplate_readings enable row level security;
 
 drop policy if exists public_access_sectors on sectors;
 create policy public_access_sectors on sectors
@@ -104,4 +137,12 @@ create policy public_access_equipment on equipment
 
 drop policy if exists public_access_maintenance on maintenance;
 create policy public_access_maintenance on maintenance
+  for all using (true) with check (true);
+
+drop policy if exists public_access_scans on scans;
+create policy public_access_scans on scans
+  for all using (true) with check (true);
+
+drop policy if exists public_access_nameplate_readings on nameplate_readings;
+create policy public_access_nameplate_readings on nameplate_readings
   for all using (true) with check (true);

@@ -31,7 +31,11 @@ import { isFuture, maskDateInput, parseLocalDate, toLocalDateInput } from '@/uti
 // One screen serves both creating and editing: the form is identical, so a
 // second route would be pure duplication.
 export default function MaintenanceScreen() {
-  const { id, maintenanceId } = useLocalSearchParams<{ id: string; maintenanceId?: string }>();
+  const { id, maintenanceId, scanId } = useLocalSearchParams<{
+    id: string;
+    maintenanceId?: string;
+    scanId?: string;
+  }>();
   const db = useSQLiteContext();
   const router = useRouter();
   const palette = usePalette();
@@ -83,7 +87,7 @@ export default function MaintenanceScreen() {
       };
 
       if (maintenanceId) await updateMaintenance(db, maintenanceId, values);
-      else await createMaintenance(db, id, values);
+      else await createMaintenance(db, id, { ...values, scanId: scanId ?? null });
 
       void uploadNow();
       router.back();
@@ -144,11 +148,22 @@ export default function MaintenanceScreen() {
       style={[styles.screen, { backgroundColor: palette.surfaceSunken }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stack.Screen
-        options={{ title: editing ? t.nav.editMaintenance : t.nav.newMaintenance }}
+        options={{
+          title: (editing ? t.nav.editMaintenance : t.nav.newMaintenance).toLocaleUpperCase(),
+        }}
       />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={[type.supportStrong, styles.label, { color: palette.ink }]}>
+        {scanId && !editing ? (
+          <View style={[styles.verifiedNote, { borderColor: palette.ok, backgroundColor: palette.okWash }]}>
+            <MaterialCommunityIcons name="qrcode-scan" size={18} color={palette.ok} />
+            <Text style={[type.supportStrong, { color: palette.ok, flex: 1 }]}>
+              {t.maintenance.verifiedNote}
+            </Text>
+          </View>
+        ) : null}
+
+        <Text style={[type.section, styles.label, { color: palette.inkMuted }]}>
           {t.maintenance.whatWasDone}
         </Text>
         <View style={styles.options}>
@@ -163,22 +178,22 @@ export default function MaintenanceScreen() {
                 style={[
                   styles.option,
                   {
-                    backgroundColor: active ? palette.brandWash : palette.surface,
+                    backgroundColor: active ? palette.brand : palette.surface,
                     borderColor: active ? palette.brand : palette.line,
-                    borderWidth: active ? 2 : 1,
+                    borderWidth: 1.5,
                   },
                 ]}>
                 <MaterialCommunityIcons
                   name={option.icon}
                   size={20}
-                  color={active ? palette.brand : palette.inkMuted}
+                  color={active ? palette.onBrand : palette.inkMuted}
                 />
                 <Text
-                  style={[type.bodyStrong, { color: active ? palette.brand : palette.ink }]}>
+                  style={[type.bodyStrong, { color: active ? palette.onBrand : palette.ink }]}>
                   {option.label}
                 </Text>
                 <Text
-                  style={[type.support, { color: active ? palette.brand : palette.inkFaint }]}>
+                  style={[type.support, { color: active ? palette.onBrand : palette.inkFaint }]}>
                   {option.hint}
                 </Text>
               </Pressable>
@@ -294,6 +309,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl * 2 },
   label: { marginBottom: spacing.sm },
+  verifiedNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
   options: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   option: { flex: 1, gap: 2, borderRadius: radius.md, padding: spacing.md },
   dateShortcuts: {
@@ -308,7 +332,7 @@ const styles = StyleSheet.create({
     gap: 6,
     minHeight: 40,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     borderWidth: 1,
   },
   spaced: { marginTop: spacing.lg },
