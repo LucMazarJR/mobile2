@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 
 import EquipmentForm from '@/components/EquipmentForm';
 import { findEquipment, updateEquipment } from '@/db/equipment';
+import { saveReading } from '@/db/nameplates';
 import type { EquipmentInput } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
@@ -42,6 +43,13 @@ export default function EditEquipment() {
   async function save(values: EquipmentInput) {
     try {
       await updateEquipment(db, id, values);
+      if (values.nameplateText) {
+        await saveReading(db, id, values.nameplateText, {
+          manufacturer: values.manufacturer,
+          model: values.model,
+          serialNumber: values.serialNumber,
+        });
+      }
       void uploadNow();
       router.back();
     } catch (error) {

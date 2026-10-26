@@ -92,6 +92,8 @@ export type EquipmentInput = {
   manufacturer: string;
   model: string;
   serialNumber: string;
+  /** Raw OCR text when the details came from a nameplate photo. */
+  nameplateText?: string;
 };
 
 export type MaintenanceInput = {

@@ -58,6 +58,29 @@ export const en: Dictionary = {
     recording: 'Recording visit',
   },
 
+  ocr: {
+    title: 'Read nameplate',
+    hint: 'Frame the identification plate on the equipment',
+    capture: 'Take photo',
+    reading: 'Reading the plate',
+    unavailableTitle: 'Plate reading is not available here',
+    unavailableBody:
+      'It works in the installed app (APK), not in Expo Go. You can still type the details in.',
+    nothingTitle: 'Could not read any text',
+    nothingBody: 'Move closer, improve the light and avoid glare on the plate.',
+    reviewTitle: 'Check the details',
+    reviewHint: 'Tap a line of the text read to send it to a field.',
+    readText: 'Text read',
+    putIn: 'Put in',
+    useData: 'Use these details',
+    retake: 'Take another photo',
+    failedTitle: 'Could not read the photo',
+    failedBody: 'Try again. If it keeps happening, close and reopen the app.',
+    formButton: 'Read nameplate with the camera',
+    formHint: 'Point the camera at the plate and the app fills in manufacturer, model and serial.',
+    formFilled: 'Details read from the plate. Check them before saving.',
+  },
+
   home: {
     searchPlaceholder: 'Search by name, type or place',
     filterAll: 'All',
@@ -129,6 +152,7 @@ export const en: Dictionary = {
   },
 
   detail: {
+    plateReading: 'Nameplate reading',
     tagTitle: 'Tag',
     tagBody: 'Print it and stick it on the equipment. Scanning it records the visit.',
     printTag: 'Print tag',
@@ -238,6 +262,10 @@ export const en: Dictionary = {
     techVersion: 'Version',
     techPending: 'Waiting to upload',
     techLastError: 'Last error',
+    techRows: 'local',
+    techPendingShort: 'queued',
+    techLastScan: 'Last QR scan',
+    techLastOcr: 'Last plate reading',
     techNoError: 'none',
   },
 

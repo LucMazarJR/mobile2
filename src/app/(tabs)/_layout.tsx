@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Tabs } from 'expo-router';
-import type { ColorValue } from 'react-native';
+import { Text, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import TabButton from '@/components/TabButton';
@@ -61,7 +61,23 @@ export default function TabsLayout() {
         options={{
           title: t.tabs.scan,
           headerShown: false,
-          tabBarIcon: icon('qrcode-scan'),
+          // Always ink on the yellow block, whatever the theme, so both the icon
+          // and the label ignore the tint the navigator passes in.
+          tabBarIcon: () => (
+            <MaterialCommunityIcons name="qrcode-scan" size={24} color={palette.onSignal} />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={{
+                color: palette.onSignal,
+                fontFamily: focused ? fonts.monoStrong : fonts.mono,
+                fontSize: 10,
+                letterSpacing: 0.8,
+                textTransform: 'uppercase',
+              }}>
+              {t.tabs.scan}
+            </Text>
+          ),
           tabBarButton: (props) => <TabButton {...props} highlight />,
         }}
       />

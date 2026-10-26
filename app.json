@@ -36,6 +36,7 @@
           }
         }
       ],
+      "./plugins/withOcrModel",
       "expo-sqlite",
       "expo-localization",
       "@react-native-community/datetimepicker",

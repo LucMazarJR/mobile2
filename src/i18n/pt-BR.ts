@@ -63,6 +63,29 @@ export const ptBR = {
     recording: 'Registrando visita',
   },
 
+  ocr: {
+    title: 'Ler plaqueta',
+    hint: 'Enquadre a plaqueta de identificação do equipamento',
+    capture: 'Fotografar',
+    reading: 'Lendo a plaqueta',
+    unavailableTitle: 'Leitura de plaqueta indisponível aqui',
+    unavailableBody:
+      'Ela funciona no app instalado no celular (APK), e não no Expo Go. Você ainda pode digitar os dados.',
+    nothingTitle: 'Não deu para ler nenhum texto',
+    nothingBody: 'Chegue mais perto, melhore a luz e evite reflexo na plaqueta.',
+    reviewTitle: 'Confira os dados lidos',
+    reviewHint: 'Toque numa linha do texto lido para mandá-la para um campo.',
+    readText: 'Texto lido',
+    putIn: 'Colocar em',
+    useData: 'Usar estes dados',
+    retake: 'Fotografar de novo',
+    failedTitle: 'Não deu para ler a foto',
+    failedBody: 'Tente de novo. Se continuar, feche e abra o app.',
+    formButton: 'Ler plaqueta com a câmera',
+    formHint: 'Aproxime a câmera da plaqueta e o app preenche fabricante, modelo e série.',
+    formFilled: 'Dados lidos da plaqueta. Confira antes de salvar.',
+  },
+
   home: {
     searchPlaceholder: 'Buscar por nome, tipo ou local',
     filterAll: 'Todos',
@@ -136,6 +159,7 @@ export const ptBR = {
   },
 
   detail: {
+    plateReading: 'Leitura da plaqueta',
     tagTitle: 'Etiqueta',
     tagBody: 'Imprima e cole no equipamento. Ao escanear, o app registra a visita.',
     printTag: 'Imprimir etiqueta',
@@ -246,6 +270,10 @@ export const ptBR = {
     techVersion: 'Versão',
     techPending: 'Aguardando envio',
     techLastError: 'Último erro',
+    techRows: 'local',
+    techPendingShort: 'na fila',
+    techLastScan: 'Última leitura de QR',
+    techLastOcr: 'Última leitura de plaqueta',
     techNoError: 'nenhum',
   },
 

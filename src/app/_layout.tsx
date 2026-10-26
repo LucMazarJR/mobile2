@@ -54,6 +54,10 @@ function Navigator() {
       />
       <Stack.Screen name="equipment/[id]/index" options={{ title: t.nav.equipment.toLocaleUpperCase() }} />
       <Stack.Screen
+        name="equipment/ocr"
+        options={{ title: t.ocr.title.toLocaleUpperCase(), presentation: 'modal' }}
+      />
+      <Stack.Screen
         name="equipment/[id]/edit"
         options={{ title: t.nav.editEquipment.toLocaleUpperCase(), presentation: 'modal' }}
       />

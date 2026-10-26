@@ -12,8 +12,9 @@ import QrCode from '@/components/QrCode';
 import SectionTitle from '@/components/SectionTitle';
 import { deleteEquipment, findEquipment } from '@/db/equipment';
 import { listMaintenance } from '@/db/maintenance';
+import { latestReading } from '@/db/nameplates';
 import { findScan, listScans } from '@/db/scans';
-import type { EquipmentWithSummary, Maintenance, Scan } from '@/db/types';
+import type { EquipmentWithSummary, Maintenance, NameplateReading, Scan } from '@/db/types';
 import { useI18n } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
 import { tagCode } from '@/services/ids';
@@ -42,6 +43,7 @@ export default function EquipmentDetail() {
   const [equipment, setEquipment] = useState<EquipmentWithSummary | null>(null);
   const [history, setHistory] = useState<Maintenance[]>([]);
   const [visits, setVisits] = useState<Scan[]>([]);
+  const [reading, setReading] = useState<NameplateReading | null>(null);
   const [currentVisit, setCurrentVisit] = useState<Scan | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -52,6 +54,7 @@ export default function EquipmentDetail() {
     setEquipment(found);
     setHistory(found ? await listMaintenance(db, id) : []);
     setVisits(found ? await listScans(db, id) : []);
+    setReading(found ? await latestReading(db, id) : null);
     setCurrentVisit(scanId ? await findScan(db, scanId) : null);
     setLoaded(true);
     await refreshPending();
@@ -165,11 +168,11 @@ export default function EquipmentDetail() {
             ) : null}
 
             <View style={[styles.plate, { backgroundColor: palette.surface, borderColor: palette.ink }]}>
-              <View style={[styles.plateBar, { backgroundColor: colors.fg }]}>
-                <Text style={[type.section, { color: '#FFFFFF' }]}>
-                  {statusFullLabel(status, t)}
-                </Text>
-              </View>
+              <View
+                accessible
+                accessibilityLabel={statusFullLabel(status, t)}
+                style={[styles.plateBar, { backgroundColor: colors.fg }]}
+              />
 
               <View style={styles.plateTop}>
                 <View style={styles.plateTitle}>
@@ -266,6 +269,32 @@ export default function EquipmentDetail() {
         )}
         ListFooterComponent={
           <View>
+            {reading ? (
+              <View>
+                <SectionTitle title={t.detail.plateReading} />
+                <View
+                  style={[
+                    styles.reading,
+                    { borderColor: palette.ink, backgroundColor: palette.surface },
+                  ]}>
+                  <View style={styles.readingHead}>
+                    <MaterialCommunityIcons name="text-recognition" size={16} color={palette.ink} />
+                    <Text style={[type.micro, { color: palette.inkMuted, flex: 1 }]}>
+                      {formatDate(reading.created_at, locale)}
+                    </Text>
+                    {reading.synced === 0 ? (
+                      <MaterialCommunityIcons
+                        name="cloud-off-outline"
+                        size={13}
+                        color={palette.inkFaint}
+                      />
+                    ) : null}
+                  </View>
+                  <Text style={[type.mono, { color: palette.ink }]}>{reading.raw_text}</Text>
+                </View>
+              </View>
+            ) : null}
+
             <SectionTitle title={t.detail.visits} count={visits.length} />
             {visits.length === 0 ? (
               <Text style={[type.support, { color: palette.inkMuted }]}>
@@ -336,7 +365,7 @@ const styles = StyleSheet.create({
   },
   visitText: { flex: 1, gap: 2 },
   plate: { borderWidth: 1.5, borderRadius: radius.sm, overflow: 'hidden' },
-  plateBar: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
+  plateBar: { height: 10 },
   plateTop: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -359,6 +388,8 @@ const styles = StyleSheet.create({
   cell: { width: '50%', gap: 2, paddingRight: spacing.sm },
   primaryAction: { marginTop: spacing.lg },
   secondaryAction: { marginTop: spacing.sm },
+  reading: { borderWidth: 1.5, borderRadius: radius.sm, padding: spacing.md, gap: spacing.sm },
+  readingHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   visitRow: {
     flexDirection: 'row',
     alignItems: 'center',

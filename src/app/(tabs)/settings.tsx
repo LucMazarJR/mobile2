@@ -6,12 +6,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import BrandMark from '@/components/BrandMark';
 import Button from '@/components/Button';
 import SectionTitle from '@/components/SectionTitle';
-import { databaseVersion } from '@/db/schema';
+import { latestReadingOverall } from '@/db/nameplates';
+import { databaseVersion, SYNCED_TABLES } from '@/db/schema';
+import { lastScanOverall } from '@/db/scans';
 import { LANGUAGES, LANGUAGE_NAMES, useI18n, type Language } from '@/i18n';
 import { useBackup } from '@/services/BackupContext';
 import { cloudHost } from '@/services/supabase';
 import { radius, spacing, tabular, type, usePalette } from '@/theme';
-import { formatTime } from '@/utils/status';
+import { formatDate, formatTime } from '@/utils/status';
 
 // Everything written for developers lives here, and nowhere else in the app.
 // It doubles as the place to show that the cloud connection is real.
@@ -19,17 +21,54 @@ export default function About() {
   const db = useSQLiteContext();
   const palette = usePalette();
   const { t, locale, language, setLanguage } = useI18n();
-  const { pending, pendingTotal, lastUpload, lastErrorDetail, uploadNow, fetchFromCloud } =
-    useBackup();
+  const {
+    pending,
+    pendingTotal,
+    lastUpload,
+    lastErrorDetail,
+    uploadNow,
+    fetchFromCloud,
+    revision,
+  } = useBackup();
 
   const [version, setVersion] = useState<number | null>(null);
   const [showTechnical, setShowTechnical] = useState(false);
   const [fetchMessage, setFetchMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const [rows, setRows] = useState<Record<string, number>>({});
+  const [lastScan, setLastScan] = useState<string | null>(null);
+  const [lastReading, setLastReading] = useState<string | null>(null);
+
   useEffect(() => {
     databaseVersion(db).then(setVersion).catch(() => setVersion(null));
   }, [db]);
+
+  // What is stored on the phone right now, table by table. Reloaded whenever an
+  // upload or download changes the data, so it is always the live state of the
+  // local database that is on screen.
+  useEffect(() => {
+    if (!showTechnical) return;
+
+    async function loadLocal() {
+      const counts: Record<string, number> = {};
+      for (const table of SYNCED_TABLES) {
+        const row = await db.getFirstAsync<{ total: number }>(
+          `SELECT COUNT(*) AS total FROM ${table} WHERE deleted_at IS NULL`
+        );
+        counts[table] = row?.total ?? 0;
+      }
+      setRows(counts);
+
+      const scan = await lastScanOverall(db);
+      setLastScan(scan ? `${formatDate(scan.scanned_at, locale)} ${formatTime(new Date(scan.scanned_at), locale)}` : null);
+
+      const reading = await latestReadingOverall(db);
+      setLastReading(reading ? reading.raw_text.split('\n').slice(0, 3).join(' | ') : null);
+    }
+
+    loadLocal().catch(() => {});
+  }, [db, showTechnical, locale, revision, pendingTotal]);
 
   async function handleFetch() {
     setBusy(true);
@@ -149,8 +188,16 @@ export default function About() {
           <Row label={t.about.techCloud} value={cloudHost ?? t.about.techCloudOff} mono />
           <Row label={t.about.techLocalDb} value="manutencao.db" mono />
           <Row label={t.about.techVersion} value={version === null ? '-' : `v${version}`} mono />
-          <Row label="equipment" value={String(pending.equipment)} mono />
-          <Row label="maintenance" value={String(pending.maintenance)} mono />
+          {SYNCED_TABLES.map((table) => (
+            <Row
+              key={table}
+              label={table}
+              value={`${rows[table] ?? 0} ${t.about.techRows} / ${pending[table]} ${t.about.techPendingShort}`}
+              mono
+            />
+          ))}
+          <Row label={t.about.techLastScan} value={lastScan ?? t.about.techNoError} mono wrap />
+          <Row label={t.about.techLastOcr} value={lastReading ?? t.about.techNoError} mono wrap />
           <Row
             label={t.about.techLastError}
             value={lastErrorDetail ?? t.about.techNoError}

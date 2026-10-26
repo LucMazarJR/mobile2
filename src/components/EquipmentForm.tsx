@@ -1,6 +1,8 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import Button from '@/components/Button';
 import Field from '@/components/Field';
@@ -8,7 +10,8 @@ import SectorPicker from '@/components/SectorPicker';
 import { createSector, listSectors } from '@/db/sectors';
 import type { EquipmentInput, SectorWithCount } from '@/db/types';
 import { useI18n } from '@/i18n';
-import { spacing, type, usePalette } from '@/theme';
+import { takeOcrResult } from '@/services/ocrBridge';
+import { radius, spacing, type, usePalette } from '@/theme';
 
 type Props = {
   initial?: EquipmentInput;
@@ -28,6 +31,7 @@ export default function EquipmentForm({
   onCancel,
 }: Props) {
   const db = useSQLiteContext();
+  const router = useRouter();
   const palette = usePalette();
   const { t } = useI18n();
 
@@ -39,6 +43,8 @@ export default function EquipmentForm({
   const [manufacturer, setManufacturer] = useState(initial?.manufacturer ?? '');
   const [model, setModel] = useState(initial?.model ?? '');
   const [serialNumber, setSerialNumber] = useState(initial?.serialNumber ?? '');
+  const [nameplateText, setNameplateText] = useState('');
+  const [fromPlate, setFromPlate] = useState(false);
   const [interval, setInterval] = useState(String(initial?.intervalDays ?? 30));
   const [errors, setErrors] = useState<{ name?: string; interval?: string }>({});
   const [saving, setSaving] = useState(false);
@@ -50,6 +56,21 @@ export default function EquipmentForm({
   useEffect(() => {
     reloadSectors();
   }, [reloadSectors]);
+
+  // Coming back from the nameplate camera: only what it actually found overwrites
+  // the form, so a partial read never wipes what was already typed.
+  useFocusEffect(
+    useCallback(() => {
+      const result = takeOcrResult();
+      if (!result) return;
+
+      if (result.fields.manufacturer) setManufacturer(result.fields.manufacturer);
+      if (result.fields.model) setModel(result.fields.model);
+      if (result.fields.serialNumber) setSerialNumber(result.fields.serialNumber);
+      setNameplateText(result.rawText);
+      setFromPlate(true);
+    }, [])
+  );
 
   async function addSector(sectorName: string) {
     const id = await createSector(db, sectorName);
@@ -80,6 +101,7 @@ export default function EquipmentForm({
         manufacturer: manufacturer.trim(),
         model: model.trim(),
         serialNumber: serialNumber.trim(),
+        nameplateText: nameplateText || undefined,
       });
     } finally {
       setSaving(false);
@@ -96,6 +118,24 @@ export default function EquipmentForm({
             {t.equipmentForm.intro}
           </Text>
         ) : null}
+
+        <Pressable
+          onPress={() => router.push('/equipment/ocr')}
+          accessibilityRole="button"
+          accessibilityLabel={t.ocr.formButton}
+          style={({ pressed }) => [
+            styles.ocrButton,
+            { borderColor: palette.ink, backgroundColor: palette.signal },
+            pressed && { opacity: 0.8 },
+          ]}>
+          <MaterialCommunityIcons name="text-recognition" size={26} color={palette.onSignal} />
+          <View style={styles.ocrText}>
+            <Text style={[type.cardTitle, { color: palette.onSignal }]}>{t.ocr.formButton}</Text>
+            <Text style={[type.support, { color: palette.onSignal }]}>
+              {fromPlate ? t.ocr.formFilled : t.ocr.formHint}
+            </Text>
+          </View>
+        </Pressable>
 
         <Field
           label={t.equipmentForm.name}
@@ -179,5 +219,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxl * 2 },
   intro: { marginBottom: spacing.lg },
+  ocrButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderWidth: 1.5,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  ocrText: { flex: 1, gap: 2 },
   actions: { gap: spacing.sm, marginTop: spacing.sm },
 });
