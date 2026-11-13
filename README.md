@@ -1,5 +1,7 @@
 # Stamp
 
+Luciano Neves Mazarão Junior, Diego Henrique Cunha de Melo, Luis Felipe Ferracine
+
 Aplicativo mobile (React Native + Expo) para acompanhar a manutenção de
 equipamentos: extintores, ar-condicionados, geradores, máquinas de laboratório
 e afins. Cada equipamento tem uma **etiqueta com QR Code** que prova que o
